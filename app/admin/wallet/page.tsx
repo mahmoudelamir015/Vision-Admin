@@ -1,0 +1,316 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { motion } from "motion/react";
+import { Banknote, CircleDashed, History, PlusCircle, Search, ShieldAlert, Wallet } from "lucide-react";
+import { useAuth } from "@/components/admin/AuthContext";
+import EmptyState from "@/components/admin/EmptyState";
+
+type WalletEntry = {
+  id: string;
+  owner: string;
+  accountType: "staff" | "student" | "parent";
+  amount: number;
+  reason: string;
+  createdAt: string;
+};
+
+export default function WalletPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
+  const [isWalletEnabled, setIsWalletEnabled] = useState(true);
+  const [activeTab, setActiveTab] = useState<"CHARGE" | "LEDGER" | "SETTLEMENT">("CHARGE");
+  const [entries, setEntries] = useState<WalletEntry[]>([]);
+  const [searchCode, setSearchCode] = useState("");
+  const [chargeOwner, setChargeOwner] = useState("");
+  const [chargeAmount, setChargeAmount] = useState("");
+  const [chargeReason, setChargeReason] = useState("");
+  const [accountType, setAccountType] = useState<WalletEntry["accountType"]>("staff");
+
+  const settlementPreview = useMemo(() => {
+    const gross = entries.reduce((sum, entry) => sum + entry.amount, 0);
+    const teacherShare = Math.round(gross * 0.6);
+    const centerShare = gross - teacherShare;
+    return { gross, teacherShare, centerShare };
+  }, [entries]);
+
+  const handleCharge = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isWalletEnabled) return;
+    if (!chargeOwner.trim() || !chargeAmount.trim()) return;
+
+    setEntries((current) => [
+      {
+        id: `entry-${Date.now()}`,
+        owner: chargeOwner.trim(),
+        accountType,
+        amount: Number(chargeAmount),
+        reason: chargeReason.trim() || "شحن رصيد",
+        createdAt: new Date().toLocaleString("ar-EG"),
+      },
+      ...current,
+    ]);
+
+    setChargeOwner("");
+    setChargeAmount("");
+    setChargeReason("");
+    setAccountType("staff");
+  };
+
+  return (
+    <div className="mx-auto flex h-full max-w-6xl flex-col gap-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40 lg:flex-row lg:items-center lg:justify-between"
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
+            <Wallet className="h-7 w-7" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">
+              المحفظة والماليات
+            </h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+              شحن رصيد الموظفين، متابعة السجل، وتجهيز التقفيل الآلي.
+            </p>
+          </div>
+        </div>
+
+        {isAdmin ? (
+          <button
+            type="button"
+            onClick={() => setIsWalletEnabled((current) => !current)}
+            className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+              isWalletEnabled
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-rose-50 text-rose-700"
+            }`}
+          >
+            <Banknote className="h-4 w-4" />
+            {isWalletEnabled ? "المحفظة مفعلة" : "المحفظة متوقفة"}
+          </button>
+        ) : null}
+      </motion.div>
+
+      {!isWalletEnabled && isAdmin ? (
+        <div className="rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-6 text-center text-red-700">
+          <ShieldAlert className="mx-auto mb-3 h-12 w-12 opacity-80" />
+          <h2 className="text-xl font-extrabold">نظام المحفظة متوقف حالياً</h2>
+          <p className="mt-2 text-sm font-bold leading-6">
+            الإدارة أوقفت الشحن والسحب مؤقتاً من غرفة العمليات. تقدر تعيد تشغيله من الزر الموجود بالأعلى في أي وقت.
+          </p>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap gap-3 rounded-[2rem] border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        {[
+          { id: "CHARGE", label: "شحن رصيد" },
+          { id: "LEDGER", label: "السجل المالي" },
+          { id: "SETTLEMENT", label: "التقفيل الآلي" },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setActiveTab(item.id as typeof activeTab)}
+            className={`rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+              activeTab === item.id
+                ? "bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "CHARGE" ? (
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+          >
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+                <PlusCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">شحن رصيد الموظف</h2>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                  أضف عملية شحن حقيقية بدون أي بيانات تجريبية.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCharge} className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">الاسم أو الموبايل</span>
+                  <input
+                    value={chargeOwner}
+                    onChange={(event) => setChargeOwner(event.target.value)}
+                    placeholder="010XXXXXXXX"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">النوع</span>
+                  <select
+                    value={accountType}
+                    onChange={(event) => setAccountType(event.target.value as WalletEntry["accountType"])}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  >
+                    <option value="staff">موظف</option>
+                    <option value="student">طالب</option>
+                    <option value="parent">ولي أمر</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">المبلغ</span>
+                <input
+                  value={chargeAmount}
+                  onChange={(event) => setChargeAmount(event.target.value)}
+                  type="number"
+                  min="1"
+                  placeholder="0"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                />
+              </label>
+
+              <label className="space-y-2">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">سبب الحركة</span>
+                <input
+                  value={chargeReason}
+                  onChange={(event) => setChargeReason(event.target.value)}
+                  placeholder="شحن، خصم، تسوية ..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={!isWalletEnabled}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
+              >
+                تسجيل الشحن
+              </button>
+            </form>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+          >
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+                <History className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">أحدث الحركات</h2>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                  أي شحن جديد بيظهر هنا فوراً.
+                </p>
+              </div>
+            </div>
+
+            {entries.length === 0 ? (
+              <EmptyState
+                icon={CircleDashed}
+                title="لا توجد حركات مالية بعد"
+                description="بعد أول عملية شحن أو خصم هتظهر السجلات هنا وتكون جاهزة للمراجعة والطباعة."
+              />
+            ) : (
+              <div className="space-y-3">
+                {entries.map((entry) => (
+                  <div key={entry.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-[#0A2540] dark:text-white">{entry.owner}</p>
+                        <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">{entry.createdAt}</p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#0A2540] dark:bg-[#0A2540] dark:text-white">
+                        {entry.accountType}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">{entry.reason}</p>
+                    <p className="mt-3 text-lg font-black text-[#0A2540] dark:text-white">
+                      {entry.amount} <span className="text-sm font-bold text-slate-400">ج.م</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.section>
+        </div>
+      ) : activeTab === "LEDGER" ? (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        >
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+              <Search className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">السجل المالي للطالب وولي الأمر</h2>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                ابحث بالكود أو رقم الموبايل، والنتائج هتيجي من Supabase لاحقاً.
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-5 grid gap-3 md:grid-cols-[1fr_auto]">
+            <input
+              value={searchCode}
+              onChange={(event) => setSearchCode(event.target.value)}
+              placeholder="مثال: VIS-101 أو 010XXXXXXXX"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            />
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 px-5 py-3 font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+            >
+              بحث
+            </button>
+          </div>
+
+          <EmptyState
+            icon={CircleDashed}
+            title="لا توجد نتائج حالياً"
+            description="مفيش بيانات مرتبطة لسه. أول ما نربط قاعدة البيانات هينزل سجل الطالب وولي الأمر هنا مباشرة."
+          />
+        </motion.section>
+      ) : (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid gap-6 lg:grid-cols-3"
+        >
+          <div className="rounded-[2rem] border border-slate-200 bg-[#0A2540] p-6 text-white shadow-sm lg:col-span-1 dark:border-white/10">
+            <p className="text-sm font-bold text-white/60">إجمالي الشحنات</p>
+            <p className="mt-2 text-4xl font-black">{settlementPreview.gross}</p>
+            <p className="mt-2 text-sm font-medium text-white/70">قيمة العمليات المسجلة الآن</p>
+          </div>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">نسبة المدرس</p>
+            <p className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">60%</p>
+            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">تنفع تتعدل من غرفة العمليات.</p>
+          </div>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">التقفيل الآلي</p>
+            <p className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">{settlementPreview.centerShare}</p>
+            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">حصة السنتر التقديرية من العمليات الحالية.</p>
+          </div>
+        </motion.section>
+      )}
+    </div>
+  );
+}
