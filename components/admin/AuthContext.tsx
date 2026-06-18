@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { fetchAdminProfileByPhone, getCurrentAdminProfile, type AdminProfile } from "@/src/lib/supabase/auth";
+import { closeRegistrationIfPastDeadline } from "@/src/lib/supabase/system-settings";
 import { getSupabaseClient } from "@/src/lib/supabase";
 import { clearAdminSession, readStoredAdminSession } from "@/src/lib/admin-session";
 
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const applyProfile = async () => {
       try {
+        await closeRegistrationIfPastDeadline();
         const profile = await getCurrentAdminProfile();
 
         if (!isMounted) return;

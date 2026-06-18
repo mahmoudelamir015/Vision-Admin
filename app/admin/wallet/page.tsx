@@ -1,31 +1,72 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Banknote, CircleDashed, History, PlusCircle, Search, ShieldAlert, Wallet } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
-
-type WalletEntry = {
-  id: string;
-  owner: string;
-  accountType: "student";
-  amount: number;
-  reason: string;
-  createdAt: string;
-};
+import {
+  closeRegistrationIfPastDeadline,
+  fetchSystemSettings,
+  subscribeToSystemSettings,
+  updateSystemSettings,
+} from "@/src/lib/supabase/system-settings";
+import {
+  fetchWalletEntries,
+  saveWalletEntry,
+  subscribeToWalletEntries,
+  type WalletEntry,
+} from "@/src/lib/supabase/wallets";
 
 export default function WalletPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
 
   const [isWalletEnabled, setIsWalletEnabled] = useState(true);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [isRegistrationSaving, setIsRegistrationSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"CHARGE" | "LEDGER" | "SETTLEMENT">("CHARGE");
   const [entries, setEntries] = useState<WalletEntry[]>([]);
   const [searchCode, setSearchCode] = useState("");
   const [chargeOwner, setChargeOwner] = useState("");
   const [chargeAmount, setChargeAmount] = useState("");
   const [chargeReason, setChargeReason] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      const [settings, walletEntries] = await Promise.all([fetchSystemSettings(), fetchWalletEntries()]);
+      await closeRegistrationIfPastDeadline();
+
+      if (!isMounted) return;
+
+      if (settings) {
+        setIsWalletEnabled(Boolean(settings.wallet_enabled));
+        setRegistrationOpen(Boolean(settings.registration_open));
+      }
+
+      setEntries(walletEntries);
+    };
+
+    void load();
+
+    const unsubscribeSettings = subscribeToSystemSettings((settings) => {
+      setIsWalletEnabled(Boolean(settings.wallet_enabled));
+      setRegistrationOpen(Boolean(settings.registration_open));
+    });
+
+    const unsubscribeEntries = subscribeToWalletEntries((walletEntries) => {
+      setEntries(walletEntries);
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribeSettings) unsubscribeSettings();
+      if (unsubscribeEntries) unsubscribeEntries();
+    };
+  }, []);
 
   const settlementPreview = useMemo(() => {
     const gross = entries.reduce((sum, entry) => sum + entry.amount, 0);
@@ -34,27 +75,56 @@ export default function WalletPage() {
     return { gross, teacherShare, centerShare };
   }, [entries]);
 
-  const handleCharge = (event: React.FormEvent) => {
+  const handleCharge = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!isWalletEnabled) return;
     if (!chargeOwner.trim() || !chargeAmount.trim()) return;
 
-    setEntries((current) => [
-      {
-        id: `entry-${Date.now()}`,
+    setIsSaving(true);
+    try {
+      const saved = await saveWalletEntry({
         owner: chargeOwner.trim(),
-        accountType: "student",
+        account_type: "student",
         amount: Number(chargeAmount),
         reason: chargeReason.trim() || "شحن رصيد الطالب",
-        createdAt: new Date().toLocaleString("ar-EG"),
-      },
-      ...current,
-    ]);
+        created_at: new Date().toISOString(),
+      });
 
-    setChargeOwner("");
-    setChargeAmount("");
-    setChargeReason("");
+      if (saved) {
+        setEntries((current) => [saved, ...current]);
+        setChargeOwner("");
+        setChargeAmount("");
+        setChargeReason("");
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const toggleWallet = async () => {
+    const nextValue = !isWalletEnabled;
+    setIsWalletEnabled(nextValue);
+    await updateSystemSettings({ wallet_enabled: nextValue });
+  };
+
+  const closeRegistrationNow = async () => {
+    setIsRegistrationSaving(true);
+    try {
+      await updateSystemSettings({ registration_open: false });
+      setRegistrationOpen(false);
+    } finally {
+      setIsRegistrationSaving(false);
+    }
+  };
+
+  const filteredEntries = searchCode.trim()
+    ? entries.filter((entry) =>
+        [entry.owner, entry.reason, entry.student_phone ?? "", entry.id ?? ""]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchCode.trim().toLowerCase()),
+      )
+    : entries;
 
   return (
     <div className="mx-auto flex h-full max-w-6xl flex-col gap-6">
@@ -70,23 +140,40 @@ export default function WalletPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">المحفظة والماليات</h1>
             <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-              شحن رصيد الطالب، متابعة السجل، وتجهيز التقفيل الآلي.
+              شحن رصيد الطالب، متابعة السجل، وإدارة فتح/غلق التسجيل.
             </p>
           </div>
         </div>
 
-        {isAdmin ? (
-          <button
-            type="button"
-            onClick={() => setIsWalletEnabled((current) => !current)}
-            className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
-              isWalletEnabled ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-            }`}
-          >
-            <Banknote className="h-4 w-4" />
-            {isWalletEnabled ? "المحفظة مفعلة" : "المحفظة متوقفة"}
-          </button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => void toggleWallet()}
+              className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+                isWalletEnabled ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+              }`}
+            >
+              <Banknote className="h-4 w-4" />
+              {isWalletEnabled ? "المحفظة مفعلة" : "المحفظة متوقفة"}
+            </button>
+          ) : null}
+
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => void closeRegistrationNow()}
+              disabled={isRegistrationSaving || !registrationOpen}
+              className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
+                registrationOpen
+                  ? "bg-[#D4AF37] text-[#0A2540]"
+                  : "bg-slate-100 text-slate-500 cursor-not-allowed"
+              }`}
+            >
+              {isRegistrationSaving ? "جاري الإغلاق..." : "إغلاق التسجيل الآن"}
+            </button>
+          ) : null}
+        </div>
       </motion.div>
 
       {!isWalletEnabled && isAdmin ? (
@@ -181,10 +268,10 @@ export default function WalletPage() {
 
               <button
                 type="submit"
-                disabled={!isWalletEnabled}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                disabled={!isWalletEnabled || isSaving}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
               >
-                تسجيل الشحن
+                {isSaving ? "جارٍ الحفظ..." : "تسجيل الشحن"}
               </button>
             </form>
           </motion.section>
@@ -214,14 +301,16 @@ export default function WalletPage() {
             ) : (
               <div className="space-y-3">
                 {entries.map((entry) => (
-                  <div key={entry.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+                  <div key={entry.id ?? `${entry.owner}-${entry.created_at}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-bold text-[#0A2540] dark:text-white">{entry.owner}</p>
-                        <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">{entry.createdAt}</p>
+                        <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                          {entry.created_at ? new Date(entry.created_at).toLocaleString("ar-EG") : ""}
+                        </p>
                       </div>
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#0A2540] dark:bg-[#0A2540] dark:text-white">
-                        {entry.accountType}
+                        {entry.account_type}
                       </span>
                     </div>
                     <p className="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">{entry.reason}</p>
@@ -269,8 +358,12 @@ export default function WalletPage() {
 
           <EmptyState
             icon={CircleDashed}
-            title="لا توجد نتائج حالياً"
-            description="مفيش بيانات مرتبطة لسه. أول ما نربط قاعدة البيانات هينزل سجل الطالب هنا مباشرة."
+            title={filteredEntries.length === 0 ? "لا توجد نتائج حالياً" : "نتائج جاهزة"}
+            description={
+              filteredEntries.length === 0
+                ? "مفيش بيانات مرتبطة لسه. أول ما نربط قاعدة البيانات هينزل سجل الطالب هنا مباشرة."
+                : "تم جلب الحركات المالية من Supabase، ويمكن لاحقاً ربطها بملفات الطالب وولي الأمر."
+            }
           />
         </motion.section>
       ) : (

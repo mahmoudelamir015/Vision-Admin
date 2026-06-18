@@ -1,4 +1,4 @@
-import { getSupabaseClient, supabaseTableNames } from "./index";
+import { getSupabaseClient, supabaseTableNames, type SupabaseRecord } from "./index";
 
 export type SystemSettings = {
   id?: string;
@@ -14,7 +14,7 @@ export async function fetchSystemSettings(): Promise<SystemSettings | null> {
   try {
     const { data, error } = await client
       .from(supabaseTableNames.systemSettings)
-      .select("*")
+      .select("id, wallet_enabled, registration_open, show_results")
       .order("id", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -24,25 +24,57 @@ export async function fetchSystemSettings(): Promise<SystemSettings | null> {
       return null;
     }
 
-    return data;
+    return (data as SystemSettings | null) ?? null;
   } catch (err) {
     console.error("Unexpected error fetching system settings:", err);
     return null;
   }
 }
 
-export async function updateSystemSettings(
-  settings: Partial<SystemSettings>
-): Promise<SystemSettings | null> {
+function normalizeSystemSettings(data: SupabaseRecord | null): SystemSettings | null {
+  if (!data) return null;
+
+  return {
+    id: typeof data.id === "string" ? data.id : undefined,
+    wallet_enabled: Boolean(data.wallet_enabled),
+    registration_open: Boolean(data.registration_open),
+    show_results: Boolean(data.show_results),
+  };
+}
+
+function getLocalDailyCloseDeadline(): Date {
+  const now = new Date();
+  const deadline = new Date(now);
+
+  deadline.setHours(23, 59, 0, 0);
+  deadline.setSeconds(0);
+  deadline.setMilliseconds(0);
+
+  return deadline;
+}
+
+export async function closeRegistrationIfPastDeadline(): Promise<SystemSettings | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  const settings = await fetchSystemSettings();
+  if (!settings) return null;
+  if (!settings.registration_open) return settings;
+
+  const deadline = getLocalDailyCloseDeadline();
+  if (new Date() < deadline) return settings;
+
+  return await updateSystemSettings({ registration_open: false });
+}
+
+export async function updateSystemSettings(settings: Partial<SystemSettings>): Promise<SystemSettings | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
   try {
-    // First, try to get existing record
     const existing = await fetchSystemSettings();
 
     if (existing) {
-      // Update existing record
       const { data, error } = await client
         .from(supabaseTableNames.systemSettings)
         .update({
@@ -59,9 +91,8 @@ export async function updateSystemSettings(
         return null;
       }
 
-      return data;
+      return normalizeSystemSettings(data as SupabaseRecord | null);
     } else {
-      // Insert new record if none exists
       const { data, error } = await client
         .from(supabaseTableNames.systemSettings)
         .insert({
@@ -77,7 +108,7 @@ export async function updateSystemSettings(
         return null;
       }
 
-      return data;
+      return normalizeSystemSettings(data as SupabaseRecord | null);
     }
   } catch (err) {
     console.error("Unexpected error updating system settings:", err);
@@ -85,14 +116,11 @@ export async function updateSystemSettings(
   }
 }
 
-export function subscribeToSystemSettings(
-  callback: (settings: SystemSettings) => void
-): (() => void) | null {
+export function subscribeToSystemSettings(callback: (settings: SystemSettings) => void): (() => void) | null {
   const client = getSupabaseClient();
   if (!client) return null;
 
   try {
-    // Use realtime channel for subscriptions
     const channel = client
       .channel("public:system_settings")
       .on(
@@ -104,13 +132,16 @@ export function subscribeToSystemSettings(
         },
         (payload) => {
           if (payload.new) {
-            callback(payload.new as SystemSettings);
+            callback(normalizeSystemSettings(payload.new as SupabaseRecord) ?? {
+              wallet_enabled: false,
+              registration_open: false,
+              show_results: false,
+            });
           }
         }
       )
       .subscribe();
 
-    // Return unsubscribe function
     return () => {
       client.removeChannel(channel);
     };

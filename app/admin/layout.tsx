@@ -2,8 +2,9 @@
 
 import Sidebar from "@/components/admin/Sidebar";
 import { AuthProvider } from "@/components/admin/AuthContext";
+import { closeRegistrationIfPastDeadline } from "@/src/lib/supabase/system-settings";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 
 export default function AdminLayout({
@@ -14,6 +15,10 @@ export default function AdminLayout({
   const pathname = usePathname();
   const isLogin = pathname === "/admin/login";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    void closeRegistrationIfPastDeadline();
+  }, []);
 
   return (
     <AuthProvider>

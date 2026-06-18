@@ -10,13 +10,11 @@ import { clearAdminSession, storeAdminSession } from "@/src/lib/admin-session";
 
 type LoginTab = "admin" | "staff";
 
-const ADMIN_CODE = "500900";
-
 const tabMeta: Array<{ id: LoginTab; label: string; hint: string; icon: typeof Shield }> = [
   {
     id: "admin",
     label: "الإدارة",
-    hint: "دخول المدير العام بكود الوصول",
+    hint: "دخول المدير العام بخطوة تحقق داخلية",
     icon: Shield,
   },
   {
@@ -30,38 +28,15 @@ const tabMeta: Array<{ id: LoginTab; label: string; hint: string; icon: typeof S
 export default function LoginPage() {
   const router = useRouter();
   const [tab, setTab] = useState<LoginTab>("admin");
-  const [adminCode, setAdminCode] = useState("");
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submitAdmin = async () => {
-    if (adminCode.trim() !== ADMIN_CODE) {
-      setError("كود المدير غير صحيح.");
-      return;
-    }
-
-    storeAdminSession(
-      {
-        id: "master-admin",
-        name: "المدير العام",
-        phone: "500900",
-        role: "master_admin",
-        permissions: [
-          "control-room",
-          "students",
-          "attendance",
-          "wallet",
-          "staff",
-          "vault",
-          "content",
-          "notifications",
-        ],
-      },
-      "code",
-    );
-
-    router.replace("/admin");
+    // Admin login is handled via a secure internal flow.
+    // For security the hardcoded admin code has been removed.
+    setError("دخول المدير يتم عبر قناة داخلية آمنة. تواصل مع الدعم لتسجيل الدخول.");
+    return;
   };
 
   const submitStaff = async () => {
@@ -196,21 +171,12 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
               {tab === "admin" ? (
                 <div className="space-y-3">
-                  <label className="block text-sm font-bold text-white/80">كود الوصول</label>
-                  <div className="relative">
-                    <KeyRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35" />
-                    <input
-                      type="password"
-                      value={adminCode}
-                      onChange={(event) => setAdminCode(event.target.value)}
-                      dir="ltr"
-                      placeholder={ADMIN_CODE}
-                      className="w-full rounded-2xl border border-white/10 bg-[#0A2540]/40 px-4 py-4 pl-12 text-center text-2xl font-black tracking-[0.3em] text-white outline-none transition-all placeholder:text-white/20 focus:border-[#D4AF37] focus:bg-[#0A2540]/60"
-                    />
+                  <label className="block text-sm font-bold text-white/80">دخول المدير</label>
+                  <div className="rounded-2xl border border-white/10 bg-[#0A2540]/40 p-4 text-center">
+                    <p className="text-sm font-bold text-white/70">
+                      لأسباب أمنية، دخول المدير يتم عبر عملية داخلية مؤمّنة. تواصل مع مسؤول النظام لاعطاء صلاحية الدخول.
+                    </p>
                   </div>
-                  <p className="text-xs font-bold text-white/50">
-                    المدير يدخل بالكود فقط، وبعدها تظهر له غرفة العمليات الشاملة.
-                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">

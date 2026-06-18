@@ -11,6 +11,7 @@ import {
   Users,
   Vault,
   Wallet,
+  Eye,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,10 @@ const navItems: NavItem[] = [
   { name: "ط¥ط¯ط§ط±ط© ط§ظ„ط·ظ„ط§ط¨", href: "/admin/users", icon: Users, permission: "students" },
   { name: "ط§ظ„ط­ط¶ظˆط± ط§ظ„ط°ظƒظٹ", href: "/admin/attendance", icon: UserCheck, permission: "attendance" },
   { name: "ط§ظ„ظ…ط­ظپط¸ط© ظˆط§ظ„ظ…ط§ظ„ظٹط§طھ", href: "/admin/wallet", icon: Wallet, permission: "wallet" },
+  { name: "شحن المحفظة", href: "/admin/wallet/topup", icon: Wallet, permission: "wallet" },
   { name: "ط¥ط¯ط§ط±ط© ط§ظ„ظ…ظˆط¸ظپظٹظ†", href: "/admin/staff", icon: UserPlus, permission: "staff" },
+  { name: "غرفة العمليات", href: "/admin/operations", icon: Eye, permission: "operations" },
+  // daily close link visible only to master_admin (rendered separately)
   { name: "ط§ظ„ط®ط²ظ†ط©", href: "/admin/vault", icon: Vault, permission: "vault" },
   { name: "ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط­طھظˆظ‰", href: "/admin/content", icon: FileText, permission: "content" },
   { name: "ظ…ط±ظƒط² ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ", href: "/admin/notifications", icon: Bell, permission: "notifications" },
@@ -103,6 +107,22 @@ export default function Sidebar({
             </Link>
           );
         })}
+
+        {user.role === "master_admin" ? (
+          <Link
+            href="/admin/wallet/daily-close"
+            onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
+              pathname === "/admin/wallet/daily-close"
+                ? "bg-[#D4AF37] text-[#0A2540] shadow-lg shadow-[#D4AF37]/20 font-black translate-x-1"
+                : "text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1",
+            )}
+          >
+            <Wallet className="w-5 h-5" />
+            <span>تقفيل اليومية</span>
+          </Link>
+        ) : null}
       </nav>
 
       <div className="p-4 border-t border-white/10 z-10 shrink-0">

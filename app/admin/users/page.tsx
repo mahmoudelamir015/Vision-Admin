@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Edit3, Plus, Search, ShieldAlert, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
+import { deleteUser, fetchUsers, saveUser, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type StudentStage = "primary" | "prep" | "secondary";
 type SecondaryTrack = "" | "arts" | "science" | "math";
 
-type StudentRecord = {
-  id: string;
-  code: string;
+type StudentForm = {
   name: string;
   phone: string;
   stage: StudentStage;
@@ -28,16 +27,8 @@ const stageGrades: Record<StudentStage, string[]> = {
     "الصف الخامس الابتدائي",
     "الصف السادس الابتدائي",
   ],
-  prep: [
-    "الصف الأول الإعدادي",
-    "الصف الثاني الإعدادي",
-    "الصف الثالث الإعدادي",
-  ],
-  secondary: [
-    "الصف الأول الثانوي ",
-    "الصف الثاني الثانوي ",
-    "الصف الثالث الثانوي ",
-  ],
+  prep: ["الصف الأول الإعدادي", "الصف الثاني الإعدادي", "الصف الثالث الإعدادي"],
+  secondary: ["الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"],
 };
 
 const trackLabels: Record<Exclude<SecondaryTrack, "">, string> = {
@@ -46,22 +37,53 @@ const trackLabels: Record<Exclude<SecondaryTrack, "">, string> = {
   math: "علمي رياضة",
 };
 
-const emptyForm = {
+const emptyForm: StudentForm = {
   name: "",
   phone: "",
-  stage: "secondary" as StudentStage,
+  stage: "secondary",
   grade: "",
-  track: "" as SecondaryTrack,
+  track: "",
 };
 
 export default function UsersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
   const [search, setSearch] = useState("");
-  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [students, setStudents] = useState<AppUserRecord[]>([]);
   const [nextCode, setNextCode] = useState(1);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<StudentForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+
+  const selectedStudent = useMemo(
+    () => students.find((student) => student.id === selectedStudentId) ?? null,
+    [selectedStudentId, students],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStudents = async () => {
+      const records = await fetchUsers("student");
+      if (!isMounted) return;
+
+      setStudents(records);
+      setNextCode(records.length + 1);
+      setSelectedStudentId((current) => current ?? records[0]?.id ?? null);
+    };
+
+    void loadStudents();
+
+    const unsubscribe = subscribeToUsers((records) => {
+      setStudents(records.filter((record) => record.role === "student"));
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   if (!isAdmin) {
     return (
@@ -77,7 +99,7 @@ export default function UsersPage() {
   const filteredStudents = !query
     ? students
     : students.filter((student) =>
-        [student.name, student.phone, student.code, student.grade, student.track]
+        [student.name, student.phone, student.student_code ?? "", student.grade ?? "", student.track ?? ""]
           .filter(Boolean)
           .some((value) => value.toLowerCase().includes(query)),
       );
@@ -96,42 +118,51 @@ export default function UsersPage() {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.grade.trim()) return;
 
-    const payload: StudentRecord = {
-      id: editingId ?? `student-${Date.now()}`,
-      code:
-        editingId && students.find((student) => student.id === editingId)
-          ? students.find((student) => student.id === editingId)!.code
-          : `VIS-${String(nextCode).padStart(4, "0")}`,
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      stage: form.stage,
-      grade: form.grade,
-      track: form.stage === "secondary" ? form.track : "",
-    };
+    setIsSaving(true);
+    try {
+      const currentStudent = editingId ? students.find((student) => student.id === editingId) ?? null : null;
+      const saved = await saveUser({
+        id: currentStudent?.id,
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        role: "student",
+        stage: form.stage,
+        grade: form.grade,
+        track: form.stage === "secondary" ? form.track : "",
+        student_code: currentStudent?.student_code ?? `VIS-${String(nextCode).padStart(4, "0")}`,
+        active: true,
+      });
 
-    setStudents((current) =>
-      editingId ? current.map((item) => (item.id === editingId ? payload : item)) : [payload, ...current],
-    );
+      if (saved) {
+        setStudents((current) =>
+          editingId ? current.map((item) => (item.phone === saved.phone ? saved : item)) : [saved, ...current],
+        );
 
-    if (!editingId) {
-      setNextCode((current) => current + 1);
+        if (!editingId) {
+          setNextCode((current) => current + 1);
+        }
+
+        setSelectedStudentId(saved.id ?? null);
+        resetForm();
+      }
+    } finally {
+      setIsSaving(false);
     }
-
-    resetForm();
   };
 
-  const startEdit = (student: StudentRecord) => {
-    setEditingId(student.id);
+  const startEdit = (student: AppUserRecord) => {
+    setEditingId(student.id ?? null);
+    setSelectedStudentId(student.id ?? null);
     setForm({
       name: student.name,
       phone: student.phone,
-      stage: student.stage,
-      grade: student.grade,
-      track: student.track,
+      stage: (student.stage as StudentStage) || "secondary",
+      grade: student.grade ?? "",
+      track: (student.track as SecondaryTrack) || "",
     });
   };
 
@@ -146,7 +177,7 @@ export default function UsersPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة الطلاب</h1>
             <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-              إضافة طالب، تعديل بياناته، حذف الحساب، وتوليد كود VIS تلقائيًا.
+              إضافة طالب، تعديل بياناته، حذف الحساب، وتوليد كود VIS تلقائياً.
             </p>
           </div>
           <div className="relative lg:w-80">
@@ -171,7 +202,7 @@ export default function UsersPage() {
               {editingId ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
             </h2>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-              كود الطالب بيتولد تلقائيًا من VIS- ويثبت بعد الإنشاء.
+              كود الطالب بيتولد تلقائياً من VIS- ويثبت بعد الإنشاء.
             </p>
           </div>
         </div>
@@ -213,14 +244,15 @@ export default function UsersPage() {
           </select>
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
+            disabled={isSaving}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
           >
             <Plus className="h-4 w-4" />
-            {editingId ? "حفظ" : "إضافة"}
+            {isSaving ? "جارٍ الحفظ..." : editingId ? "حفظ" : "إضافة"}
           </button>
         </form>
 
-        {form.stage === "secondary" && (form.grade === "الصف الثاني الثانوي المطور" || form.grade === "الصف الثالث الثانوي المطور") ? (
+        {form.stage === "secondary" && (form.grade === "الصف الثاني الثانوي" || form.grade === "الصف الثالث الثانوي") ? (
           <div className="mt-3 grid gap-3 lg:grid-cols-3">
             {(["arts", "science", "math"] as Exclude<SecondaryTrack, "">[]).map((track) => (
               <button
@@ -236,6 +268,35 @@ export default function UsersPage() {
                 {trackLabels[track]}
               </button>
             ))}
+          </div>
+        ) : null}
+
+        {selectedStudent ? (
+          <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{selectedStudent.name}</h3>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{selectedStudent.phone}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentId(null)}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600"
+              >
+                إخفاء التفاصيل
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl bg-white p-3 text-sm font-bold dark:bg-black/20">
+                الكود: {selectedStudent.student_code ?? "VIS-0000"}
+              </div>
+              <div className="rounded-2xl bg-white p-3 text-sm font-bold dark:bg-black/20">
+                المرحلة: {selectedStudent.stage ?? "-"}
+              </div>
+              <div className="rounded-2xl bg-white p-3 text-sm font-bold dark:bg-black/20">
+                الصف: {selectedStudent.grade ?? "-"}
+              </div>
+            </div>
           </div>
         ) : null}
 
@@ -274,9 +335,9 @@ export default function UsersPage() {
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                 {filteredStudents.map((student) => (
-                  <tr key={student.id}>
+                  <tr key={student.id ?? student.phone}>
                     <td className="px-4 py-4 font-mono text-sm font-bold tracking-[0.2em] text-[#0A2540] dark:text-[#D4AF37]">
-                      {student.code}
+                      {student.student_code ?? "VIS-0000"}
                     </td>
                     <td className="px-4 py-4 font-bold text-[#0A2540] dark:text-white">{student.name}</td>
                     <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 dark:text-slate-300">
@@ -291,7 +352,7 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">
                       {student.grade}
-                      {student.track ? ` - ${trackLabels[student.track]}` : ""}
+                      {student.track ? ` - ${trackLabels[student.track as Exclude<SecondaryTrack, "">]}` : ""}
                     </td>
                     <td className="px-4 py-4 text-left">
                       <div className="flex items-center justify-end gap-2">
@@ -305,7 +366,12 @@ export default function UsersPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setStudents((current) => current.filter((item) => item.id !== student.id))}
+                          onClick={async () => {
+                            if (student.id) {
+                              await deleteUser(student.id);
+                            }
+                            setStudents((current) => current.filter((item) => item.phone !== student.phone));
+                          }}
                           className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
                         >
                           <Trash2 className="h-4 w-4" />

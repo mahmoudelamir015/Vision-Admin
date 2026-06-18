@@ -18,6 +18,7 @@ export const supabaseTableNames = {
 } as const;
 
 export type SupabaseTableName = (typeof supabaseTableNames)[keyof typeof supabaseTableNames];
+export type SupabaseRecord = Record<string, unknown>;
 
 let supabaseClient: SupabaseClient | null = null;
 

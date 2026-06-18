@@ -1,9 +1,10 @@
 'use client';
 
+import { AlertCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 type EmptyStateProps = {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   title: string;
   description: string;
   actionLabel?: string;
@@ -11,7 +12,7 @@ type EmptyStateProps = {
 };
 
 export default function EmptyState({
-  icon: Icon,
+  icon: Icon = AlertCircle,
   title,
   description,
   actionLabel,

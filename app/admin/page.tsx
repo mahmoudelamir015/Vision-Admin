@@ -22,18 +22,16 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
-import { fetchSystemSettings, updateSystemSettings, type SystemSettings } from "@/src/lib/supabase/system-settings";
+import {
+  fetchSystemSettings,
+  subscribeToSystemSettings,
+  updateSystemSettings,
+  type SystemSettings,
+} from "@/src/lib/supabase/system-settings";
+import { deleteUser, fetchUsers, saveUser, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type SystemSwitchKey = "wallet" | "registration" | "results";
 type StaffPermission = "attendance" | "wallet" | "operations";
-
-type StaffMember = {
-  id: string;
-  name: string;
-  phone: string;
-  permission: StaffPermission;
-  active: boolean;
-};
 
 const switchMeta: Array<{
   key: SystemSwitchKey;
@@ -76,7 +74,7 @@ export default function AdminControlRoomPage() {
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [savingKey, setSavingKey] = useState<SystemSwitchKey | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [staff, setStaff] = useState<AppUserRecord[]>([]);
   const [staffName, setStaffName] = useState("");
   const [staffPhone, setStaffPhone] = useState("");
   const [staffPermission, setStaffPermission] = useState<StaffPermission>("attendance");
@@ -121,8 +119,31 @@ export default function AdminControlRoomPage() {
 
     void loadSettings();
 
+    const unsubscribe = subscribeToSystemSettings((settings) => {
+      if (!isMounted) return;
+
+      setSwitches({
+        wallet: Boolean(settings.wallet_enabled),
+        registration: Boolean(settings.registration_open),
+        results: Boolean(settings.show_results),
+      });
+    });
+
     return () => {
       isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToUsers((records) => {
+      setStaff(records.filter((record) => record.role === "staff"));
+    });
+
+    void fetchUsers("staff").then((records) => setStaff(records));
+
+    return () => {
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 
@@ -176,23 +197,36 @@ export default function AdminControlRoomPage() {
     }
   };
 
-  const addStaffMember = (event: FormEvent<HTMLFormElement>) => {
+  const addStaffMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!staffName.trim() || !staffPhone.trim()) return;
 
-    setStaff((current) => [
-      ...current,
-      {
-        id: `staff-${Date.now()}`,
-        name: staffName.trim(),
-        phone: staffPhone.trim(),
-        permission: staffPermission,
-        active: true,
-      },
-    ]);
-    setStaffName("");
-    setStaffPhone("");
-    setStaffPermission("attendance");
+    const saved = await saveUser({
+      name: staffName.trim(),
+      phone: staffPhone.trim(),
+      role: "staff",
+      permissions: [staffPermission],
+      active: true,
+    });
+
+    if (saved) {
+      setStaff((current) => [saved, ...current.filter((item) => item.phone !== saved.phone)]);
+      setStaffName("");
+      setStaffPhone("");
+      setStaffPermission("attendance");
+    }
+  };
+
+  const updateStaffMember = async (member: AppUserRecord, patch: Partial<AppUserRecord>) => {
+    const saved = await saveUser({
+      ...member,
+      role: "staff",
+      ...patch,
+    });
+
+    if (saved) {
+      setStaff((current) => current.map((item) => (item.phone === member.phone ? saved : item)));
+    }
   };
 
   return (
@@ -386,20 +420,15 @@ export default function AdminControlRoomPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                       {staff.map((member) => (
-                        <tr key={member.id} className="bg-white/70 dark:bg-transparent">
+                        <tr key={member.id ?? member.phone} className="bg-white/70 dark:bg-transparent">
                           <td className="px-4 py-4 font-bold text-[#0A2540] dark:text-white">{member.name}</td>
                           <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 dark:text-slate-300">{member.phone}</td>
                           <td className="px-4 py-4">
                             <select
-                              value={member.permission}
-                              onChange={(event) => {
-                                const nextPermission = event.target.value as StaffPermission;
-                                setStaff((current) =>
-                                  current.map((item) =>
-                                    item.id === member.id ? { ...item, permission: nextPermission } : item,
-                                  ),
-                                );
-                              }}
+                              value={(member.permissions?.[0] as StaffPermission) ?? "attendance"}
+                              onChange={(event) =>
+                                void updateStaffMember(member, { permissions: [event.target.value as StaffPermission] })
+                              }
                               className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-black/20"
                             >
                               <option value="attendance">الحضور</option>
@@ -410,13 +439,7 @@ export default function AdminControlRoomPage() {
                           <td className="px-4 py-4">
                             <button
                               type="button"
-                              onClick={() =>
-                                setStaff((current) =>
-                                  current.map((item) =>
-                                    item.id === member.id ? { ...item, active: !item.active } : item,
-                                  ),
-                                )
-                              }
+                              onClick={() => void updateStaffMember(member, { active: !member.active })}
                               className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black ${
                                 member.active
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
@@ -429,7 +452,14 @@ export default function AdminControlRoomPage() {
                           <td className="px-4 py-4 text-left">
                             <button
                               type="button"
-                              onClick={() => setStaff((current) => current.filter((item) => item.id !== member.id))}
+                              onClick={() =>
+                                void (async () => {
+                                  if (member.id) {
+                                    await deleteUser(member.id);
+                                  }
+                                  setStaff((current) => current.filter((item) => item.phone !== member.phone));
+                                })()
+                              }
                               className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
                             >
                               <Trash2 className="h-4 w-4" />
