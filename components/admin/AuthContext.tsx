@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { fetchAdminProfileByPhone, getCurrentAdminProfile, type AdminProfile } from "@/src/lib/supabase/auth";
 import { getSupabaseClient } from "@/src/lib/supabase";
+import { clearAdminSession, readStoredAdminSession } from "@/src/lib/admin-session";
 
 type User = AdminProfile;
 
@@ -16,13 +17,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(() => Boolean(getSupabaseClient()));
+  const [user, setUser] = useState<User | null>(() => readStoredAdminSession());
+  const [isLoading, setIsLoading] = useState(() => {
+    const storedSession = readStoredAdminSession();
+    return !storedSession && Boolean(getSupabaseClient());
+  });
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     let isMounted = true;
+
+    const storedSession = readStoredAdminSession();
+    if (storedSession) {
+      return undefined;
+    }
+
     const client = getSupabaseClient();
 
     if (!client) {
@@ -99,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const client = getSupabaseClient();
 
     setUser(null);
+    clearAdminSession();
 
     if (client) {
       await client.auth.signOut();
