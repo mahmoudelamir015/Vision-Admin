@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -18,7 +18,7 @@ type StaffMember = {
 
 export default function StaffPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "master_admin";
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -28,8 +28,8 @@ export default function StaffPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-600">
         <ShieldAlert className="mb-3 h-14 w-14 opacity-70" />
-        <h2 className="text-xl font-extrabold">غير مصرح لك بدخول الموظفين</h2>
-        <p className="mt-2 max-w-md text-sm font-bold leading-6">الصفحة محمية للمدير فقط.</p>
+        <h2 className="text-xl font-extrabold">ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط¯ط®ظˆظ„ ط§ظ„ظ…ظˆط¸ظپظٹظ†</h2>
+        <p className="mt-2 max-w-md text-sm font-bold leading-6">ط§ظ„طµظپط­ط© ظ…ط­ظ…ظٹط© ظ„ظ„ظ…ط¯ظٹط± ظپظ‚ط·.</p>
       </div>
     );
   }
@@ -66,9 +66,9 @@ export default function StaffPage() {
             <Users className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة الموظفين</h1>
+            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">ط¥ط¯ط§ط±ط© ط§ظ„ظ…ظˆط¸ظپظٹظ†</h1>
             <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-              إضافة موظف، تعديل صلاحياته، أو إيقاف الحساب.
+              ط¥ط¶ط§ظپط© ظ…ظˆط¸ظپطŒ طھط¹ط¯ظٹظ„ طµظ„ط§ط­ظٹط§طھظ‡طŒ ط£ظˆ ط¥ظٹظ‚ط§ظپ ط§ظ„ط­ط³ط§ط¨.
             </p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function StaffPage() {
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="اسم الموظف"
+            placeholder="ط§ط³ظ… ط§ظ„ظ…ظˆط¸ظپ"
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
@@ -94,16 +94,16 @@ export default function StaffPage() {
             onChange={(event) => setPermission(event.target.value as StaffPermission)}
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           >
-            <option value="attendance">الحضور</option>
-            <option value="wallet">المحفظة</option>
-            <option value="operations">العمليات</option>
+            <option value="attendance">ط§ظ„ط­ط¶ظˆط±</option>
+            <option value="wallet">ط§ظ„ظ…ط­ظپط¸ط©</option>
+            <option value="operations">ط§ظ„ط¹ظ…ظ„ظٹط§طھ</option>
           </select>
           <button
             type="submit"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
           >
             <Plus className="h-4 w-4" />
-            إضافة
+            ط¥ط¶ط§ظپط©
           </button>
         </form>
       </section>
@@ -111,8 +111,8 @@ export default function StaffPage() {
       {staff.length === 0 ? (
         <EmptyState
           icon={CircleDashed}
-          title="لا يوجد موظفون بعد"
-          description="ابدأ بإضافة أول موظف من النموذج بالأعلى، وبعدها تقدر تغيّر الصلاحية أو توقف الحساب."
+          title="ظ„ط§ ظٹظˆط¬ط¯ ظ…ظˆط¸ظپظˆظ† ط¨ط¹ط¯"
+          description="ط§ط¨ط¯ط£ ط¨ط¥ط¶ط§ظپط© ط£ظˆظ„ ظ…ظˆط¸ظپ ظ…ظ† ط§ظ„ظ†ظ…ظˆط°ط¬ ط¨ط§ظ„ط£ط¹ظ„ظ‰طŒ ظˆط¨ط¹ط¯ظ‡ط§ طھظ‚ط¯ط± طھط؛ظٹظ‘ط± ط§ظ„طµظ„ط§ط­ظٹط© ط£ظˆ طھظˆظ‚ظپ ط§ظ„ط­ط³ط§ط¨."
         />
       ) : (
         <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
@@ -120,11 +120,11 @@ export default function StaffPage() {
             <table className="min-w-full text-right">
               <thead className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-300">
                 <tr>
-                  <th className="px-4 py-3 text-sm font-bold">الاسم</th>
-                  <th className="px-4 py-3 text-sm font-bold">الموبايل</th>
-                  <th className="px-4 py-3 text-sm font-bold">الصلاحية</th>
-                  <th className="px-4 py-3 text-sm font-bold">الحالة</th>
-                  <th className="px-4 py-3 text-sm font-bold text-left">إجراء</th>
+                  <th className="px-4 py-3 text-sm font-bold">ط§ظ„ط§ط³ظ…</th>
+                  <th className="px-4 py-3 text-sm font-bold">ط§ظ„ظ…ظˆط¨ط§ظٹظ„</th>
+                  <th className="px-4 py-3 text-sm font-bold">ط§ظ„طµظ„ط§ط­ظٹط©</th>
+                  <th className="px-4 py-3 text-sm font-bold">ط§ظ„ط­ط§ظ„ط©</th>
+                  <th className="px-4 py-3 text-sm font-bold text-left">ط¥ط¬ط±ط§ط،</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/10">
@@ -145,9 +145,9 @@ export default function StaffPage() {
                         }}
                         className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-black/20"
                       >
-                        <option value="attendance">الحضور</option>
-                        <option value="wallet">المحفظة</option>
-                        <option value="operations">العمليات</option>
+                        <option value="attendance">ط§ظ„ط­ط¶ظˆط±</option>
+                        <option value="wallet">ط§ظ„ظ…ط­ظپط¸ط©</option>
+                        <option value="operations">ط§ظ„ط¹ظ…ظ„ظٹط§طھ</option>
                       </select>
                     </td>
                     <td className="px-4 py-4">
@@ -166,7 +166,7 @@ export default function StaffPage() {
                             : "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400"
                         }`}
                       >
-                        {member.active ? "نشط" : "موقوف"}
+                        {member.active ? "ظ†ط´ط·" : "ظ…ظˆظ‚ظˆظپ"}
                       </button>
                     </td>
                     <td className="px-4 py-4 text-left">
@@ -176,7 +176,7 @@ export default function StaffPage() {
                         className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
                       >
                         <Trash2 className="h-4 w-4" />
-                        حذف
+                        ط­ط°ظپ
                       </button>
                     </td>
                   </tr>
@@ -189,3 +189,4 @@ export default function StaffPage() {
     </div>
   );
 }
+

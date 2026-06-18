@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRef, useState } from "react";
 import { motion } from "motion/react";
@@ -11,7 +11,7 @@ const CHECKIN_VALUE = "VISION_CENTER_CHECKIN_CODE";
 
 export default function AttendancePage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "master_admin";
   const [activeTab, setActiveTab] = useState<"LIVE" | "BARCODE">("LIVE");
   const barcodeRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,10 +63,10 @@ export default function AttendancePage() {
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">
-              الحضور الذكي
+              ط§ظ„ط­ط¶ظˆط± ط§ظ„ط°ظƒظٹ
             </h1>
             <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-              باركود ثابت للطباعة + شاشة بث مباشر جاهزة للربط.
+              ط¨ط§ط±ظƒظˆط¯ ط«ط§ط¨طھ ظ„ظ„ط·ط¨ط§ط¹ط© + ط´ط§ط´ط© ط¨ط« ظ…ط¨ط§ط´ط± ط¬ط§ظ‡ط²ط© ظ„ظ„ط±ط¨ط·.
             </p>
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function AttendancePage() {
                 : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
             }`}
           >
-            البث المباشر
+            ط§ظ„ط¨ط« ط§ظ„ظ…ط¨ط§ط´ط±
           </button>
           {isAdmin ? (
             <button
@@ -93,7 +93,7 @@ export default function AttendancePage() {
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
               }`}
             >
-              الباركود الثابت
+              ط§ظ„ط¨ط§ط±ظƒظˆط¯ ط§ظ„ط«ط§ط¨طھ
             </button>
           ) : null}
         </div>
@@ -108,9 +108,9 @@ export default function AttendancePage() {
         >
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">شاشة البث المباشر</h2>
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">ط´ط§ط´ط© ط§ظ„ط¨ط« ط§ظ„ظ…ط¨ط§ط´ط±</h2>
               <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-                هتظهر هنا تسجيلات الحضور الفعلية أول ما الـ backend يبقى متصل.
+                ظ‡طھط¸ظ‡ط± ظ‡ظ†ط§ طھط³ط¬ظٹظ„ط§طھ ط§ظ„ط­ط¶ظˆط± ط§ظ„ظپط¹ظ„ظٹط© ط£ظˆظ„ ظ…ط§ ط§ظ„ظ€ backend ظٹط¨ظ‚ظ‰ ظ…طھطµظ„.
               </p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">
@@ -120,8 +120,8 @@ export default function AttendancePage() {
 
           <EmptyState
             icon={CircleDashed}
-            title="لا توجد تسجيلات حضور حالياً"
-            description="مفيش بيانات حقيقية لسه. الشاشة جاهزة لاستقبال أي طالب يسجل بالموبايل بدون أي بيانات وهمية."
+            title="ظ„ط§ طھظˆط¬ط¯ طھط³ط¬ظٹظ„ط§طھ ط­ط¶ظˆط± ط­ط§ظ„ظٹط§ظ‹"
+            description="ظ…ظپظٹط´ ط¨ظٹط§ظ†ط§طھ ط­ظ‚ظٹظ‚ظٹط© ظ„ط³ظ‡. ط§ظ„ط´ط§ط´ط© ط¬ط§ظ‡ط²ط© ظ„ط§ط³طھظ‚ط¨ط§ظ„ ط£ظٹ ط·ط§ظ„ط¨ ظٹط³ط¬ظ„ ط¨ط§ظ„ظ…ظˆط¨ط§ظٹظ„ ط¨ط¯ظˆظ† ط£ظٹ ط¨ظٹط§ظ†ط§طھ ظˆظ‡ظ…ظٹط©."
           />
         </motion.section>
       ) : (
@@ -135,14 +135,14 @@ export default function AttendancePage() {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#0A2540]/5 px-3 py-1 text-xs font-black uppercase tracking-[0.25em] text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
                 <QrCode className="h-4 w-4" />
-                ثابت للطباعة
+                ط«ط§ط¨طھ ظ„ظ„ط·ط¨ط§ط¹ط©
               </div>
               <h2 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">
-                باركود الحضور الثابت
+                ط¨ط§ط±ظƒظˆط¯ ط§ظ„ط­ط¶ظˆط± ط§ظ„ط«ط§ط¨طھ
               </h2>
               <p className="max-w-xl text-sm font-bold leading-7 text-slate-500 dark:text-slate-400">
-                استخدم الباركود نفسه على مدخل السنتر أو على لوحة الحضور. بعد الربط
-                الحقيقي، نفس الكود ده هيقود صفحة الـ self check-in للموبايل.
+                ط§ط³طھط®ط¯ظ… ط§ظ„ط¨ط§ط±ظƒظˆط¯ ظ†ظپط³ظ‡ ط¹ظ„ظ‰ ظ…ط¯ط®ظ„ ط§ظ„ط³ظ†طھط± ط£ظˆ ط¹ظ„ظ‰ ظ„ظˆط­ط© ط§ظ„ط­ط¶ظˆط±. ط¨ط¹ط¯ ط§ظ„ط±ط¨ط·
+                ط§ظ„ط­ظ‚ظٹظ‚ظٹطŒ ظ†ظپط³ ط§ظ„ظƒظˆط¯ ط¯ظ‡ ظ‡ظٹظ‚ظˆط¯ طµظپط­ط© ط§ظ„ظ€ self check-in ظ„ظ„ظ…ظˆط¨ط§ظٹظ„.
               </p>
 
               <div ref={barcodeRef} className="inline-flex rounded-[2rem] border border-slate-200 bg-white p-4 shadow-lg dark:border-white/10 dark:bg-white">
@@ -157,7 +157,7 @@ export default function AttendancePage() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
               >
                 <Download className="h-4 w-4" />
-                تحميل الباركود كصورة
+                طھط­ظ…ظٹظ„ ط§ظ„ط¨ط§ط±ظƒظˆط¯ ظƒطµظˆط±ط©
               </button>
             </div>
 
@@ -165,14 +165,14 @@ export default function AttendancePage() {
               <div className="mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-[#D4AF37]" />
                 <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">
-                  سجل الحضور اللحظي
+                  ط³ط¬ظ„ ط§ظ„ط­ط¶ظˆط± ط§ظ„ظ„ط­ط¸ظٹ
                 </h3>
               </div>
 
               <EmptyState
                 icon={CircleDashed}
-                title="لا توجد حركة حضور الآن"
-                description="بعد تشغيل الـ mobile check-in من أولياء الأمور أو الطلاب هتظهر السجلات هنا فوراً."
+                title="ظ„ط§ طھظˆط¬ط¯ ط­ط±ظƒط© ط­ط¶ظˆط± ط§ظ„ط¢ظ†"
+                description="ط¨ط¹ط¯ طھط´ط؛ظٹظ„ ط§ظ„ظ€ mobile check-in ظ…ظ† ط£ظˆظ„ظٹط§ط، ط§ظ„ط£ظ…ظˆط± ط£ظˆ ط§ظ„ط·ظ„ط§ط¨ ظ‡طھط¸ظ‡ط± ط§ظ„ط³ط¬ظ„ط§طھ ظ‡ظ†ط§ ظپظˆط±ط§ظ‹."
               />
             </div>
           </div>
@@ -181,3 +181,4 @@ export default function AttendancePage() {
     </div>
   );
 }
+

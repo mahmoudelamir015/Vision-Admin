@@ -1,10 +1,34 @@
-export const supabaseEnv = {
-  url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-};
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export const isSupabaseConfigured = Boolean(supabaseEnv.url && supabaseEnv.anonKey);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-export const supabaseTables = ['students', 'teachers', 'staff', 'attendance', 'wallet', 'exams'] as const;
+export const supabaseConfig = {
+  url: supabaseUrl,
+  anonKey: supabaseAnonKey,
+} as const;
 
-export type SupabaseTable = (typeof supabaseTables)[number];
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+export const supabaseTableNames = {
+  users: "users",
+  systemSettings: "system_settings",
+  wallets: "wallets",
+  attendance: "attendance",
+} as const;
+
+export type SupabaseTableName = (typeof supabaseTableNames)[keyof typeof supabaseTableNames];
+
+let supabaseClient: SupabaseClient | null = null;
+
+export function getSupabaseClient() {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
+  if (!supabaseClient) {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return supabaseClient;
+}

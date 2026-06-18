@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Send, Users, User, Bell, ShieldAlert } from "lucide-react";
@@ -7,7 +7,7 @@ import { useAuth } from "@/components/admin/AuthContext";
 
 export default function NotificationsPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "master_admin";
 
   const [target, setTarget] = useState<"ALL" | "GROUP" | "STUDENT">("ALL");
   const [title, setTitle] = useState("");
@@ -19,7 +19,7 @@ export default function NotificationsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-red-500">
         <ShieldAlert className="w-16 h-16 mb-4 opacity-50" />
-        <h2 className="text-xl font-bold">غير مصرح لك بدخول هذه الصفحة</h2>
+        <h2 className="text-xl font-bold">ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط¯ط®ظˆظ„ ظ‡ط°ظ‡ ط§ظ„طµظپط­ط©</h2>
       </div>
     );
   }
@@ -48,8 +48,8 @@ export default function NotificationsPage() {
             <Bell className="w-6 h-6 text-[#0A2540]" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-[#0A2540]">مركز الإشعارات</h2>
-          <p className="text-gray-500 text-sm mt-1">إرسال تنبيهات فورية لتطبيقات الطلاب وأولياء الأمور</p>
+          <h2 className="text-2xl font-bold text-[#0A2540]">ظ…ط±ظƒط² ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ</h2>
+          <p className="text-gray-500 text-sm mt-1">ط¥ط±ط³ط§ظ„ طھظ†ط¨ظٹظ‡ط§طھ ظپظˆط±ظٹط© ظ„طھط·ط¨ظٹظ‚ط§طھ ط§ظ„ط·ظ„ط§ط¨ ظˆط£ظˆظ„ظٹط§ط، ط§ظ„ط£ظ…ظˆط±</p>
         </div>
       </div>
 
@@ -62,14 +62,14 @@ export default function NotificationsPage() {
                     exit={{ opacity: 0, y: -20 }}
                     className="absolute top-0 left-0 right-0 bg-green-500 text-white p-4 text-center font-bold z-50 text-sm shadow-md"
                 >
-                    تم إرسال الإشعار بنجاح!
+                    طھظ… ط¥ط±ط³ط§ظ„ ط§ظ„ط¥ط´ط¹ط§ط± ط¨ظ†ط¬ط§ط­!
                 </motion.div>
             )}
         </AnimatePresence>
 
         <form onSubmit={handleSend} className="space-y-8 max-w-2xl mx-auto mt-4">
           <div className="space-y-3">
-            <label className="block text-sm font-bold text-gray-700">الفئة المستهدفة</label>
+            <label className="block text-sm font-bold text-gray-700">ط§ظ„ظپط¦ط© ط§ظ„ظ…ط³طھظ‡ط¯ظپط©</label>
             <div className="grid grid-cols-3 gap-4">
               <button
                 type="button"
@@ -81,7 +81,7 @@ export default function NotificationsPage() {
                 }`}
               >
                 <Bell className="w-5 h-5" />
-                <span className="font-bold">الجميع</span>
+                <span className="font-bold">ط§ظ„ط¬ظ…ظٹط¹</span>
               </button>
               
               <button
@@ -94,7 +94,7 @@ export default function NotificationsPage() {
                 }`}
               >
                 <Users className="w-5 h-5" />
-                <span className="font-bold">مجموعة صفية</span>
+                <span className="font-bold">ظ…ط¬ظ…ظˆط¹ط© طµظپظٹط©</span>
               </button>
 
               <button
@@ -107,29 +107,29 @@ export default function NotificationsPage() {
                 }`}
               >
                 <User className="w-5 h-5" />
-                <span className="font-bold">طالب محدد</span>
+                <span className="font-bold">ط·ط§ظ„ط¨ ظ…ط­ط¯ط¯</span>
               </button>
             </div>
           </div>
 
           {target === "GROUP" && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-3">
-               <label className="block text-sm font-bold text-gray-700">اختر الصف الدراسي</label>
+               <label className="block text-sm font-bold text-gray-700">ط§ط®طھط± ط§ظ„طµظپ ط§ظ„ط¯ط±ط§ط³ظٹ</label>
                <select className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-[#D4AF37] transition-all focus:bg-white font-semibold text-gray-700">
-                  <option value="">-- يرجى الاختيار --</option>
-                  <option value="1">الصف الأول الثانوى المطور</option>
-                  <option value="2">الصف الثاني الثانوى المطور</option>
-                  <option value="3">الصف الثالث الثانوى المطور</option>
+                  <option value="">-- ظٹط±ط¬ظ‰ ط§ظ„ط§ط®طھظٹط§ط± --</option>
+                  <option value="1">ط§ظ„طµظپ ط§ظ„ط£ظˆظ„ ط§ظ„ط«ط§ظ†ظˆظ‰ ط§ظ„ظ…ط·ظˆط±</option>
+                  <option value="2">ط§ظ„طµظپ ط§ظ„ط«ط§ظ†ظٹ ط§ظ„ط«ط§ظ†ظˆظ‰ ط§ظ„ظ…ط·ظˆط±</option>
+                  <option value="3">ط§ظ„طµظپ ط§ظ„ط«ط§ظ„ط« ط§ظ„ط«ط§ظ†ظˆظ‰ ط§ظ„ظ…ط·ظˆط±</option>
                </select>
             </motion.div>
           )}
 
           {target === "STUDENT" && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-3">
-               <label className="block text-sm font-bold text-gray-700">كود الطالب</label>
+               <label className="block text-sm font-bold text-gray-700">ظƒظˆط¯ ط§ظ„ط·ط§ظ„ط¨</label>
                <input 
                   type="text" 
-                  placeholder="مثال: VIS-101" 
+                  placeholder="ظ…ط«ط§ظ„: VIS-101" 
                   className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-[#D4AF37] transition-all focus:bg-white font-mono tracking-widest font-bold text-right dir-ltr"
                />
             </motion.div>
@@ -137,25 +137,25 @@ export default function NotificationsPage() {
 
           <div className="space-y-4 pt-4 border-t border-gray-100">
             <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700">عنوان الإشعار</label>
+                <label className="block text-sm font-bold text-gray-700">ط¹ظ†ظˆط§ظ† ط§ظ„ط¥ط´ط¹ط§ط±</label>
                 <input 
                     required
                     type="text" 
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="مثال: تنبيه هام بخصوص موعد الامتحان" 
+                    placeholder="ظ…ط«ط§ظ„: طھظ†ط¨ظٹظ‡ ظ‡ط§ظ… ط¨ط®طµظˆطµ ظ…ظˆط¹ط¯ ط§ظ„ط§ظ…طھط­ط§ظ†" 
                     className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-[#D4AF37] transition-all focus:bg-white text-lg font-bold"
                 />
             </div>
 
             <div className="space-y-2 flex-1">
-                <label className="block text-sm font-bold text-gray-700">نص الإشعار</label>
+                <label className="block text-sm font-bold text-gray-700">ظ†طµ ط§ظ„ط¥ط´ط¹ط§ط±</label>
                 <textarea 
                     required
                     rows={5}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="اكتب المحتوى هنا..." 
+                    placeholder="ط§ظƒطھط¨ ط§ظ„ظ…ط­طھظˆظ‰ ظ‡ظ†ط§..." 
                     className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-[#D4AF37] transition-all focus:bg-white resize-none font-medium text-gray-800"
                 />
             </div>
@@ -171,7 +171,7 @@ export default function NotificationsPage() {
             ) : (
                 <>
                     <Send className="w-5 h-5 ml-1" />
-                    <span>إرسال الإشعار الآن</span>
+                    <span>ط¥ط±ط³ط§ظ„ ط§ظ„ط¥ط´ط¹ط§ط± ط§ظ„ط¢ظ†</span>
                 </>
             )}
           </button>
@@ -180,3 +180,4 @@ export default function NotificationsPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { motion } from "motion/react";
 import { CircleDashed, FileText, ShieldAlert, Upload } from "lucide-react";
@@ -7,14 +7,14 @@ import EmptyState from "@/components/admin/EmptyState";
 
 export default function ContentPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "master_admin";
 
   if (!isAdmin) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-600">
         <ShieldAlert className="mb-3 h-14 w-14 opacity-70" />
-        <h2 className="text-xl font-extrabold">غير مصرح لك بدخول المحتوى</h2>
-        <p className="mt-2 max-w-md text-sm font-bold leading-6">الصفحة محمية للمدير فقط.</p>
+        <h2 className="text-xl font-extrabold">ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط¯ط®ظˆظ„ ط§ظ„ظ…ط­طھظˆظ‰</h2>
+        <p className="mt-2 max-w-md text-sm font-bold leading-6">ط§ظ„طµظپط­ط© ظ…ط­ظ…ظٹط© ظ„ظ„ظ…ط¯ظٹط± ظپظ‚ط·.</p>
       </div>
     );
   }
@@ -31,9 +31,9 @@ export default function ContentPage() {
             <FileText className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة المحتوى</h1>
+            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط­طھظˆظ‰</h1>
             <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
-              رفع الملفات والمذكرات هيتم ربطه بالـ API لاحقاً بدون بيانات وهمية.
+              ط±ظپط¹ ط§ظ„ظ…ظ„ظپط§طھ ظˆط§ظ„ظ…ط°ظƒط±ط§طھ ظ‡ظٹطھظ… ط±ط¨ط·ظ‡ ط¨ط§ظ„ظ€ API ظ„ط§ط­ظ‚ط§ظ‹ ط¨ط¯ظˆظ† ط¨ظٹط§ظ†ط§طھ ظˆظ‡ظ…ظٹط©.
             </p>
           </div>
         </div>
@@ -43,8 +43,8 @@ export default function ContentPage() {
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <EmptyState
             icon={CircleDashed}
-            title="لا توجد ملفات منشورة حالياً"
-            description="أي ملف هيتضاف من هنا أو من Supabase هيظهر تلقائياً في قائمة المحتوى."
+            title="ظ„ط§ طھظˆط¬ط¯ ظ…ظ„ظپط§طھ ظ…ظ†ط´ظˆط±ط© ط­ط§ظ„ظٹط§ظ‹"
+            description="ط£ظٹ ظ…ظ„ظپ ظ‡ظٹطھط¶ط§ظپ ظ…ظ† ظ‡ظ†ط§ ط£ظˆ ظ…ظ† Supabase ظ‡ظٹط¸ظ‡ط± طھظ„ظ‚ط§ط¦ظٹط§ظ‹ ظپظٹ ظ‚ط§ط¦ظ…ط© ط§ظ„ظ…ط­طھظˆظ‰."
           />
         </div>
 
@@ -54,19 +54,20 @@ export default function ContentPage() {
               <Upload className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">رفع ملف جديد</h2>
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">ط±ظپط¹ ظ…ظ„ظپ ط¬ط¯ظٹط¯</h2>
               <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                الواجهة جاهزة للربط مع التخزين.
+                ط§ظ„ظˆط§ط¬ظ‡ط© ط¬ط§ظ‡ط²ط© ظ„ظ„ط±ط¨ط· ظ…ط¹ ط§ظ„طھط®ط²ظٹظ†.
               </p>
             </div>
           </div>
 
           <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-white/10 dark:bg-white/5">
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-300">اسحب الملف هنا أو اختر من الجهاز</p>
-            <p className="mt-2 text-xs font-medium text-slate-400">PWA ready • Mobile first</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-300">ط§ط³ط­ط¨ ط§ظ„ظ…ظ„ظپ ظ‡ظ†ط§ ط£ظˆ ط§ط®طھط± ظ…ظ† ط§ظ„ط¬ظ‡ط§ط²</p>
+            <p className="mt-2 text-xs font-medium text-slate-400">PWA ready â€¢ Mobile first</p>
           </div>
         </div>
       </section>
     </div>
   );
 }
+

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
   Banknote,
   CircleDashed,
   CreditCard,
+  Loader2,
   Plus,
   QrCode,
   ReceiptText,
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
+import { fetchSystemSettings, updateSystemSettings, type SystemSettings } from "@/src/lib/supabase/system-settings";
 
 type SystemSwitchKey = "wallet" | "registration" | "results";
 type StaffPermission = "attendance" | "wallet" | "operations";
@@ -42,17 +43,17 @@ const switchMeta: Array<{
   {
     key: "wallet",
     title: "تفعيل / تعطيل المحفظة",
-    description: "التحكم في شحن الأرصدة وسجلات الدفع من غرفة العمليات.",
+    description: "التحكم في إظهار واجهة الماليات وتفعيل الشحن والتفاصيل المالية للطلاب وأولياء الأمور.",
   },
   {
     key: "registration",
     title: "فتح / قفل تسجيل الطلاب الجدد",
-    description: "إيقاف أو تشغيل استقبال الطلاب الجدد من الواجهة العامة.",
+    description: "إيقاف أو استقبال طلبات الطلاب الجدد من الواجهة العامة وقت الحاجة.",
   },
   {
     key: "results",
     title: "إظهار / إخفاء النتائج",
-    description: "إدارة ظهور نتائج الامتحانات للطلاب وأولياء الأمور.",
+    description: "التحكم في إظهار نتائج الامتحانات للطلاب وأولياء الأمور مباشرة من هنا.",
   },
 ];
 
@@ -63,15 +64,18 @@ const quickActions = [
   { title: "الخزنة", href: "/admin/vault", icon: Banknote },
 ];
 
-export default function AdminControlRoomPage() {
-  const router = useRouter();
-  const { user } = useAuth();
+const defaultSwitches: Record<SystemSwitchKey, boolean> = {
+  wallet: false,
+  registration: false,
+  results: false,
+};
 
-  const [switches, setSwitches] = useState<Record<SystemSwitchKey, boolean>>({
-    wallet: true,
-    registration: false,
-    results: true,
-  });
+export default function AdminControlRoomPage() {
+  const { user } = useAuth();
+  const [switches, setSwitches] = useState<Record<SystemSwitchKey, boolean>>(defaultSwitches);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [savingKey, setSavingKey] = useState<SystemSwitchKey | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [staffName, setStaffName] = useState("");
   const [staffPhone, setStaffPhone] = useState("");
@@ -81,12 +85,48 @@ export default function AdminControlRoomPage() {
   const [autoSettlement, setAutoSettlement] = useState("80");
 
   useEffect(() => {
-    if (user?.role === "STAFF") {
-      router.replace("/admin/attendance");
+    if (user?.role === "staff") {
+      return;
     }
-  }, [router, user]);
+  }, [user]);
 
-  if (user?.role !== "ADMIN") {
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      try {
+        const settings = await fetchSystemSettings();
+
+        if (!isMounted) return;
+
+        if (settings) {
+          setSwitches({
+            wallet: Boolean(settings.wallet_enabled),
+            registration: Boolean(settings.registration_open),
+            results: Boolean(settings.show_results),
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load system settings", error);
+
+        if (isMounted) {
+          setSettingsError("تعذر تحميل مفاتيح التحكم من قاعدة البيانات.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSettings(false);
+        }
+      }
+    };
+
+    void loadSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (user?.role !== "master_admin") {
     return null;
   }
 
@@ -97,14 +137,46 @@ export default function AdminControlRoomPage() {
   const centerShare = lessonPriceNumber - teacherShare;
   const autoCloseValue = Math.round((lessonPriceNumber * autoSettlementNumber) / 100);
 
-  const toggleSwitch = (key: SystemSwitchKey) => {
+  const toggleSwitch = async (key: SystemSwitchKey) => {
+    if (savingKey) return;
+
+    const nextValue = !switches[key];
+    const previousValue = switches[key];
+    const dbKey =
+      key === "wallet"
+        ? "wallet_enabled"
+        : key === "registration"
+          ? "registration_open"
+          : "show_results";
+
+    setSettingsError(null);
     setSwitches((current) => ({
       ...current,
-      [key]: !current[key],
+      [key]: nextValue,
     }));
+    setSavingKey(key);
+
+    try {
+      const updated = await updateSystemSettings({
+        [dbKey]: nextValue,
+      } as Partial<SystemSettings>);
+
+      if (!updated) {
+        throw new Error("لم يتم حفظ التغيير.");
+      }
+    } catch (error) {
+      console.error("Failed to update system settings", error);
+      setSettingsError("حصل خطأ أثناء الحفظ. تم إرجاع القيمة السابقة.");
+      setSwitches((current) => ({
+        ...current,
+        [key]: previousValue,
+      }));
+    } finally {
+      setSavingKey(null);
+    }
   };
 
-  const addStaffMember = (event: React.FormEvent) => {
+  const addStaffMember = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!staffName.trim() || !staffPhone.trim()) return;
 
@@ -138,17 +210,15 @@ export default function AdminControlRoomPage() {
               The Control Room
             </div>
             <div className="space-y-3">
-              <h1 className="text-3xl font-black leading-tight sm:text-4xl">
-                غرفة العمليات الشاملة
-              </h1>
+              <h1 className="text-3xl font-black leading-tight sm:text-4xl">غرفة العمليات الشاملة</h1>
               <p className="max-w-2xl text-sm font-medium leading-7 text-white/70 sm:text-base">
-                هنا بنشغّل ونوقف الأنظمة الحساسة، نراجع حركة الموظفين، ونضبط نسب
-                المدرسين وسعر الحصص قبل ما الداتا الحقيقية توصل من Supabase.
+                هنا بنشغل ونوقف الأنظمة الحساسة، نراجع حركة الموظفين، ونضبط نسب المدرسين وسعر الحصص قبل ما البيانات الحقيقية توصل من Supabase.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               {quickActions.map((action) => {
                 const Icon = action.icon;
+
                 return (
                   <Link
                     key={action.title}
@@ -197,13 +267,13 @@ export default function AdminControlRoomPage() {
                   <SlidersHorizontal className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">
-                    مفاتيح التحكم
-                  </h2>
-                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                    تشغيل الأنظمة الرئيسية أو إيقافها فوراً.
-                  </p>
+                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">مفاتيح التحكم</h2>
+                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">التفعيل والحفظ الفوري داخل جدول system_settings.</p>
                 </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                {isLoadingSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {isLoadingSettings ? "جارٍ التحميل..." : "جاهز"}
               </div>
             </div>
 
@@ -211,35 +281,40 @@ export default function AdminControlRoomPage() {
               {switchMeta.map((item) => {
                 const enabled = switches[item.key];
                 const Icon = enabled ? ToggleRight : ToggleLeft;
+                const isSaving = savingKey === item.key;
 
                 return (
                   <button
                     key={item.key}
                     type="button"
-                    onClick={() => toggleSwitch(item.key)}
+                    onClick={() => void toggleSwitch(item.key)}
+                    disabled={isLoadingSettings || savingKey !== null}
                     className={`rounded-[1.5rem] border p-5 text-right transition-all ${
                       enabled
                         ? "border-[#D4AF37]/40 bg-[#D4AF37]/5 shadow-sm"
                         : "border-slate-200 bg-slate-50/80 dark:border-white/10 dark:bg-white/5"
-                    }`}
+                    } ${isLoadingSettings || savingKey ? "cursor-wait opacity-70" : ""}`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-2">
                         <span className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.25em] text-[#0A2540] dark:bg-[#0A2540] dark:text-white">
-                          {enabled ? "ON" : "OFF"}
+                          {isSaving ? "..." : enabled ? "ON" : "OFF"}
                         </span>
-                        <h3 className="text-base font-extrabold text-[#0A2540] dark:text-white">
-                          {item.title}
-                        </h3>
+                        <h3 className="text-base font-extrabold text-[#0A2540] dark:text-white">{item.title}</h3>
                       </div>
                       <Icon className={`h-7 w-7 ${enabled ? "text-[#D4AF37]" : "text-slate-400"}`} />
                     </div>
-                    <p className="mt-3 text-sm font-medium leading-6 text-slate-500 dark:text-slate-400">
-                      {item.description}
-                    </p>
+                    <p className="mt-3 text-sm font-medium leading-6 text-slate-500 dark:text-slate-400">{item.description}</p>
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-semibold">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600 dark:bg-white/5 dark:text-slate-300">
+                {isLoadingSettings ? "جارٍ تحميل الإعدادات..." : "تم تحميل الإعدادات من Supabase"}
+              </span>
+              {settingsError ? <span className="text-red-500 dark:text-red-300">{settingsError}</span> : null}
             </div>
           </section>
 
@@ -250,12 +325,8 @@ export default function AdminControlRoomPage() {
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">
-                    إدارة الموظفين
-                  </h2>
-                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                    إضافة موظف، تعديل صلاحياته، أو حذف الحساب.
-                  </p>
+                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">إدارة الموظفين</h2>
+                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">إضافة موظف برقم موبايله، تعديل الصلاحية، والحذف عند الحاجة.</p>
                 </div>
               </div>
             </div>
@@ -298,7 +369,7 @@ export default function AdminControlRoomPage() {
                   <EmptyState
                     icon={CircleDashed}
                     title="لا يوجد موظفون بعد"
-                    description="أضف أول موظف من النموذج بالأعلى، وبعدها هتقدر تعدل الصلاحيات أو توقف الحساب."
+                    description="أضف أول موظف من النموذج بالأعلى، وبعدها هنقدر نعدل الصلاحيات أو نوقف الحساب من هنا."
                   />
                 </div>
               ) : (
@@ -381,12 +452,8 @@ export default function AdminControlRoomPage() {
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">
-                    التحكم المالي المطلق
-                  </h2>
-                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                    تعديل نسب المدرسين، سعر الحصة، وسياسة التقفيل التلقائي.
-                  </p>
+                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">التحكم المالي المطلق</h2>
+                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">تعديل نسب المدرسين وسعر الحصة وسياسة التقفيل الآلي.</p>
                 </div>
               </div>
             </div>
@@ -457,9 +524,7 @@ export default function AdminControlRoomPage() {
               </div>
               <div>
                 <h2 className="text-lg font-extrabold text-[#0A2540] dark:text-white">نظرة سريعة</h2>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                  حالة الأنظمة المفتاحية الآن.
-                </p>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">حالة الأنظمة المفتاحية الآن.</p>
               </div>
             </div>
 
@@ -484,21 +549,19 @@ export default function AdminControlRoomPage() {
               </div>
               <div>
                 <h2 className="text-lg font-extrabold text-[#0A2540] dark:text-white">خطوات الربط القادمة</h2>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-                  الجداول والسياسات جاهزين في التصميم.
-                </p>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">الجداول والسياسات جاهزة للتوصيل.</p>
               </div>
             </div>
 
             <div className="mt-5 space-y-3">
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                Tables: Students, Teachers, Staff, Attendance, Wallet, Exams.
+                Tables: users, system_settings, wallets, attendance.
               </div>
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                Auth: كود المدير 500900 وداخلياً موبايل الموظف.
+                Auth: Phone OTP للمدير العام والموظفين.
               </div>
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                Policies: المدير كامل، والموظف محدود بالمهمات المسموحة فقط.
+                Policies: المدير العام كامل، والموظف بصلاحيات محدودة فقط.
               </div>
             </div>
           </section>
