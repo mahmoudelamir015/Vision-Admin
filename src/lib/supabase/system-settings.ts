@@ -8,6 +8,18 @@ export type SystemSettings = {
 };
 
 export async function fetchSystemSettings(): Promise<SystemSettings | null> {
+  if (typeof window !== "undefined") {
+    try {
+      const response = await fetch("/api/admin/system-settings", { credentials: "include", cache: "no-store" });
+      if (response.ok) {
+        const payload = (await response.json()) as { settings?: SystemSettings | null };
+        return payload.settings ?? null;
+      }
+    } catch {
+      // fall back to direct client access below
+    }
+  }
+
   const client = getSupabaseClient();
   if (!client) return null;
 
@@ -68,6 +80,26 @@ export async function closeRegistrationIfPastDeadline(): Promise<SystemSettings 
 }
 
 export async function updateSystemSettings(settings: Partial<SystemSettings>): Promise<SystemSettings | null> {
+  if (typeof window !== "undefined") {
+    try {
+      const response = await fetch("/api/admin/system-settings", {
+        method: "PATCH",
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+
+      if (response.ok) {
+        const payload = (await response.json()) as { settings?: SystemSettings | null };
+        return payload.settings ?? null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   const client = getSupabaseClient();
   if (!client) return null;
 
@@ -117,6 +149,25 @@ export async function updateSystemSettings(settings: Partial<SystemSettings>): P
 }
 
 export function subscribeToSystemSettings(callback: (settings: SystemSettings) => void): (() => void) | null {
+  if (typeof window !== "undefined") {
+    let active = true;
+    const tick = async () => {
+      if (!active) return;
+      const settings = await fetchSystemSettings();
+      if (settings) callback(settings);
+    };
+
+    void tick();
+    const timer = window.setInterval(() => {
+      void tick();
+    }, 10000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }
+
   const client = getSupabaseClient();
   if (!client) return null;
 

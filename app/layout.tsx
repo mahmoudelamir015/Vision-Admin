@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Cairo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -32,10 +33,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning dir="rtl">
-      <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-gray-50 text-gray-900`}
-      >
+    <html lang="ar" suppressHydrationWarning dir="rtl">
+      <head>
+        <meta charSet="utf-8" />
+      </head>
+      <body className={`${cairo.variable} ${jetbrainsMono.variable} font-sans antialiased bg-gray-50 text-gray-900`}>
         {children}
       </body>
     </html>

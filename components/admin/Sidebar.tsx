@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -25,17 +25,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "ط؛ط±ظپط© ط§ظ„ط¹ظ…ظ„ظٹط§طھ ط§ظ„ط´ط§ظ…ظ„ط©", href: "/admin", icon: Shield, permission: "control-room" },
-  { name: "ط¥ط¯ط§ط±ط© ط§ظ„ط·ظ„ط§ط¨", href: "/admin/users", icon: Users, permission: "students" },
-  { name: "ط§ظ„ط­ط¶ظˆط± ط§ظ„ط°ظƒظٹ", href: "/admin/attendance", icon: UserCheck, permission: "attendance" },
-  { name: "ط§ظ„ظ…ط­ظپط¸ط© ظˆط§ظ„ظ…ط§ظ„ظٹط§طھ", href: "/admin/wallet", icon: Wallet, permission: "wallet" },
+  { name: "غرفة العمليات الشاملة", href: "/admin", icon: Shield, permission: "control-room" },
+  { name: "إدارة الطلاب", href: "/admin/users", icon: Users, permission: "students" },
+  { name: "الحضور الذكي", href: "/admin/attendance", icon: UserCheck, permission: "attendance" },
+  { name: "المحفظة والماليات", href: "/admin/wallet", icon: Wallet, permission: "wallet" },
   { name: "شحن المحفظة", href: "/admin/wallet/topup", icon: Wallet, permission: "wallet" },
-  { name: "ط¥ط¯ط§ط±ط© ط§ظ„ظ…ظˆط¸ظپظٹظ†", href: "/admin/staff", icon: UserPlus, permission: "staff" },
+  { name: "إدارة الموظفين", href: "/admin/staff", icon: UserPlus, permission: "staff" },
   { name: "غرفة العمليات", href: "/admin/operations", icon: Eye, permission: "operations" },
-  // daily close link visible only to master_admin (rendered separately)
-  { name: "ط§ظ„ط®ط²ظ†ط©", href: "/admin/vault", icon: Vault, permission: "vault" },
-  { name: "ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط­طھظˆظ‰", href: "/admin/content", icon: FileText, permission: "content" },
-  { name: "ظ…ط±ظƒط² ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ", href: "/admin/notifications", icon: Bell, permission: "notifications" },
+  { name: "الخزنة", href: "/admin/vault", icon: Vault, permission: "vault" },
+  { name: "إدارة المحتوى", href: "/admin/content", icon: FileText, permission: "content" },
+  { name: "مركز الإشعارات", href: "/admin/notifications", icon: Bell, permission: "notifications" },
 ];
 
 export default function Sidebar({
@@ -77,7 +76,7 @@ export default function Sidebar({
           Vision Center
         </div>
         <div className="bg-white/10 px-3 py-1 rounded-full text-[10px] lg:text-xs font-medium text-white/80 border border-white/5">
-          {user.name} ({user.role === "master_admin" ? "ط§ظ„ظ…ط¯ظٹط±" : "ظ…ظˆط¸ظپ"})
+          {user.name} ({user.role === "master_admin" ? "المدير" : "موظف"})
         </div>
       </div>
 
@@ -132,10 +131,9 @@ export default function Sidebar({
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-400 transition-all font-bold w-full"
         >
           <LogOut className="w-5 h-5" />
-          طھط³ط¬ظٹظ„ ط§ظ„ط®ط±ظˆط¬
+          تسجيل الخروج
         </button>
       </div>
     </aside>
   );
 }
-

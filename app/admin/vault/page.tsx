@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -15,9 +15,9 @@ export default function VaultPage() {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-600">
         <ShieldAlert className="mb-3 h-14 w-14 opacity-70" />
-        <h2 className="text-xl font-extrabold">ط؛ظٹط± ظ…طµط±ط­ ظ„ظƒ ط¨ط¯ط®ظˆظ„ ط§ظ„ط®ط²ظ†ط©</h2>
+        <h2 className="text-xl font-extrabold">لا يوجد تصريح لك بالدخول إلى الخزنة</h2>
         <p className="mt-2 max-w-md text-sm font-bold leading-6">
-          ط§ظ„طµظپط­ط© ظ…ط­ظ…ظٹط© ظ„ظ„ظ…ط¯ظٹط± ظپظ‚ط·.
+          هذه الصفحة محمية للمدير فقط.
         </p>
       </div>
     );
@@ -27,31 +27,31 @@ export default function VaultPage() {
     <div className="mx-auto flex h-full max-w-6xl flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[2rem] bg-[#0A2540] p-6 text-white shadow-sm">
-          <p className="text-sm font-bold text-white/60">ط±طµظٹط¯ ط§ظ„ط®ط²ظ†ط©</p>
+          <p className="text-sm font-bold text-white/60">رصيد الخزنة</p>
           <p className="mt-2 text-4xl font-black">0</p>
-          <p className="mt-2 text-sm font-medium text-white/70">ط¬ط§ظ‡ط² ظ„ظ„ط§ط³طھظ‚ط¨ط§ظ„ ط¨ط¹ط¯ ط§ظ„ط±ط¨ط·.</p>
+          <p className="mt-2 text-sm font-medium text-white/70">جاهز للاستقبال بعد الربط.</p>
         </div>
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-emerald-500" />
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">ط§ظ„ظˆط±ط§ط¯</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">الوارد</p>
           </div>
-          <p className="mt-2 text-2xl font-black text-[#0A2540] dark:text-white">0 ط¬.ظ…</p>
+          <p className="mt-2 text-2xl font-black text-[#0A2540] dark:text-white">0 ج.م</p>
         </div>
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="flex items-center gap-3">
             <TrendingDown className="h-5 w-5 text-rose-500" />
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">ط§ظ„ظ…ظ†طµط±ظپ</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">المنصرف</p>
           </div>
-          <p className="mt-2 text-2xl font-black text-[#0A2540] dark:text-white">0 ط¬.ظ…</p>
+          <p className="mt-2 text-2xl font-black text-[#0A2540] dark:text-white">0 ج.م</p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3 rounded-[2rem] border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
         {[
-          { id: "ALL", label: "ط§ظ„ظƒظ„" },
-          { id: "INCOME", label: "ط§ظ„ظˆط±ط§ط¯" },
-          { id: "EXPENSE", label: "ط§ظ„ظ…ظ†طµط±ظپ" },
+          { id: "ALL", label: "الكل" },
+          { id: "INCOME", label: "الوارد" },
+          { id: "EXPENSE", label: "المنصرف" },
         ].map((item) => (
           <button
             key={item.id}
@@ -78,20 +78,19 @@ export default function VaultPage() {
             <Vault className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">ط³ط¬ظ„ ط§ظ„ط­ط±ظƒط§طھ ط§ظ„ظ…ط§ظ„ظٹط©</h2>
+            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">سجل الحركات المالية</h2>
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
-              ظ„ط§ طھظˆط¬ط¯ ط¨ظٹط§ظ†ط§طھ ظˆظ‡ظ…ظٹط©. ط£ظˆظ„ ط­ط±ظƒط© ط­ظ‚ظٹظ‚ظٹط© ظ‡طھط¸ظ‡ط± ظ‡ظ†ط§ ط¨ط¹ط¯ ط§ظ„ط±ط¨ط·.
+              لا توجد بيانات وهمية. أول حركة حقيقية ستظهر هنا بعد الربط.
             </p>
           </div>
         </div>
 
         <EmptyState
           icon={CircleDashed}
-          title="ط§ظ„ط®ط²ظ†ط© ط¬ط§ظ‡ط²ط© ظ„ظ„ط±ط¨ط·"
-          description="ط§ظ„طµظپط­ط© ط§ظ„ط­ط§ظ„ظٹط© ط¹ط¨ط§ط±ط© ط¹ظ† ظ„ظˆط­ط© ظ…طھط§ط¨ط¹ط© ظ†ط¸ظٹظپط© ط¨ط¯ظˆظ† ط£ظٹ ط³ط¬ظ„ ظˆظ‡ظ…ظٹ. ط¨ط¹ط¯ Supabase ظ‡ظ†ظ‚ط±ط§ ط§ظ„ط­ط±ظƒط§طھ ط§ظ„ظپط¹ظ„ظٹط© ظˆظ†ظ‚ط³ظ…ظ‡ط§ طھظ„ظ‚ط§ط¦ظٹط§ظ‹."
+          title="الخزنة جاهزة للربط"
+          description="الصفحة الحالية عبارة عن لوحة متابعة نظيفة بدون أي سجل وهمي. بعد Supabase هتظهر الحركات الفعلية وتتقسم تلقائياً."
         />
       </motion.section>
     </div>
   );
 }
-

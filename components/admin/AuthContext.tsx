@@ -2,12 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { fetchAdminProfileByPhone, getCurrentAdminProfile, type AdminProfile } from "@/src/lib/supabase/auth";
 import { closeRegistrationIfPastDeadline } from "@/src/lib/supabase/system-settings";
-import { getSupabaseClient } from "@/src/lib/supabase";
-import { clearAdminSession, readStoredAdminSession } from "@/src/lib/admin-session";
 
-type User = AdminProfile;
+type User = {
+  id: string;
+  name: string;
+  phone: string;
+  role: "master_admin" | "staff";
+  permissions: string[];
+};
 
 interface AuthContextType {
   user: User | null;
@@ -18,74 +21,45 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => readStoredAdminSession());
-  const [isLoading, setIsLoading] = useState(() => {
-    const storedSession = readStoredAdminSession();
-    return !storedSession && Boolean(getSupabaseClient());
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     let isMounted = true;
 
-    const storedSession = readStoredAdminSession();
-    if (storedSession) {
-      return undefined;
-    }
-
-    const client = getSupabaseClient();
-
-    if (!client) {
-      return undefined;
-    }
-
-    const applyProfile = async () => {
+    const hydrate = async () => {
       try {
         await closeRegistrationIfPastDeadline();
-        const profile = await getCurrentAdminProfile();
+
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+          credentials: "include",
+        });
 
         if (!isMounted) return;
-        setUser(profile);
+
+        if (!response.ok) {
+          setUser(null);
+          return;
+        }
+
+        const result = (await response.json()) as { profile?: User };
+        setUser(result.profile ?? null);
       } catch (error) {
         console.error("Failed to load admin session", error);
-
-        if (isMounted) {
-          setUser(null);
-        }
+        if (isMounted) setUser(null);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    void applyProfile();
-
-    const { data } = client.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return;
-
-      const phone = session?.user.phone;
-      if (!phone) {
-        setUser(null);
-        return;
-      }
-
-      const profile = await fetchAdminProfileByPhone(phone);
-      if (!isMounted) return;
-
-      if (!profile) {
-        setUser(null);
-        void client.auth.signOut();
-        return;
-      }
-
-      setUser(profile);
-    });
+    void hydrate();
 
     return () => {
       isMounted = false;
-      data.subscription.unsubscribe();
     };
   }, []);
 
@@ -108,15 +82,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isLoading, pathname, router, user]);
 
   const logout = async () => {
-    const client = getSupabaseClient();
+    await fetch("/api/auth/sign-out", {
+      method: "POST",
+      credentials: "include",
+    });
 
     setUser(null);
-    clearAdminSession();
-
-    if (client) {
-      await client.auth.signOut();
-    }
-
     router.replace("/admin/login");
   };
 

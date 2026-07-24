@@ -1,135 +1,229 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { QrCode, ArrowRight, Camera, XCircle, CheckCircle, ChevronRight } from "lucide-react";
+import { QrCode, XCircle, CheckCircle, ChevronRight, RefreshCw, Phone, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
+import { saveAttendanceRecord } from "@/src/lib/supabase/attendance";
 
 export default function ScannerPage() {
   const [scanning, setScanning] = useState(true);
   const [result, setResult] = useState<"SUCCESS" | "ERROR" | null>(null);
+  const [token, setToken] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
-    if (scanning) {
-        if (!scannerRef.current) {
-            scannerRef.current = new Html5QrcodeScanner(
-                "student-reader",
-                { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1 },
-                false
-            );
-            
-            scannerRef.current.render(
-                (decodedText) => {
-                    setScanning(false);
-                    setResult(decodedText === "VISION_CENTER_CHECKIN_CODE" ? "SUCCESS" : "ERROR");
-                    if (scannerRef.current) {
-                        scannerRef.current.pause(true);
-                    }
-                },
-                (err) => {}
-            );
-        } else {
-             scannerRef.current.resume();
-        }
+    if (!scanning) return;
+
+    if (!scannerRef.current) {
+      scannerRef.current = new Html5QrcodeScanner(
+        "student-reader",
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1 },
+        false,
+      );
+
+      scannerRef.current.render(
+        (decodedText) => {
+          setToken(decodedText.trim());
+          setScanning(false);
+          if (scannerRef.current) scannerRef.current.pause(true);
+        },
+        () => {
+          // ignore scan noise
+        },
+      );
+    } else {
+      scannerRef.current.resume();
     }
   }, [scanning]);
 
   useEffect(() => {
     return () => {
-        if (scannerRef.current) {
-            try { scannerRef.current.clear(); } catch(e) {}
+      if (scannerRef.current) {
+        try {
+          void scannerRef.current.clear();
+        } catch {
+          // ignore cleanup errors
         }
-    }
+      }
+    };
   }, []);
 
+  const submit = async () => {
+    setMessage(null);
+
+    const normalizedPhone = normalizeEgyptianPhone(phone);
+    if (!normalizedPhone) {
+      setMessage("رقم الهاتف غير صالح");
+      return;
+    }
+
+    if (!token) {
+      setMessage("امسح QR الأول");
+      return;
+    }
+
+    if (pin.trim().length < 4) {
+      setMessage("اكتب الـ PIN المختصر");
+      return;
+    }
+
+    try {
+      const saved = await saveAttendanceRecord({
+        student_name: normalizedPhone,
+        student_phone: normalizedPhone,
+        code: pin.trim(),
+        qr_value: token,
+      });
+
+      if (!saved) {
+        setResult("ERROR");
+        setMessage("فشل تسجيل الحضور");
+        return;
+      }
+
+      setResult("SUCCESS");
+      setMessage("تم تسجيل الحضور بنجاح");
+    } catch (error) {
+      setResult("ERROR");
+      setMessage(error instanceof Error ? error.message : "فشل تسجيل الحضور");
+    }
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-black relative">
-      {/* Header */}
+    <div className="flex min-h-screen flex-col relative bg-black">
       <div className="absolute top-0 inset-x-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent">
         <Link href="/student" className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20">
           <ChevronRight className="w-6 h-6" />
         </Link>
-        <span className="text-white font-bold tracking-wide">مسح كود الحضور</span>
-        <div className="w-10 h-10"></div> {/* spacer */}
+        <span className="text-white font-bold tracking-wide">مسح QR الحضور</span>
+        <div className="w-10 h-10" />
       </div>
 
-      {/* Main Scanner Area */}
-      <div className="flex-1 relative flex flex-col items-center justify-center">
-         {/* Live Camera View Simulation */}
-         <div className="absolute inset-0 bg-[#0A2540]">
-             {/* Simulating camera feed blur */}
-             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-[#0A2540] to-black"></div>
-         </div>
+      <div className="flex-1 relative flex flex-col items-center justify-center px-4 py-24">
+        <div className="absolute inset-0 bg-[#0A2540]">
+          <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-[#0A2540] to-black" />
+        </div>
 
-         <AnimatePresence mode="wait">
-            {scanning ? (
-              <motion.div 
-                 key="scanning"
-                 initial={{ opacity: 0, scale: 0.9 }}
-                 animate={{ opacity: 1, scale: 1 }}
-                 exit={{ opacity: 0, scale: 1.1 }}
-                 className="relative z-10 flex flex-col items-center"
-              >
-                 <div className="w-80 max-w-[90vw] relative mb-12">
-                     <div id="student-reader" className="w-full bg-white rounded-3xl overflow-hidden border-4 border-[#0A2540]"></div>
-                     
-                    {/* Scanner Frame Options omitted to give room for real scanner UI */}
-                 </div>
+        <AnimatePresence mode="wait">
+          {scanning ? (
+            <motion.div
+              key="scanning"
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.06 }}
+              className="relative z-10 flex w-full max-w-xl flex-col items-center gap-6"
+            >
+              <div className="w-full overflow-hidden rounded-[2rem] border-4 border-white/90 bg-white shadow-2xl">
+                <div id="student-reader" className="w-full" />
+              </div>
 
-                 <div className="bg-black/50 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                    <span className="text-white text-sm font-bold tracking-wide">جاري البحث عن كود السنتر...</span>
-                 </div>
-              </motion.div>
-            ) : (
-              <motion.div 
-                 key="result"
-                 initial={{ opacity: 0, y: 30 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 className="relative z-10 w-full max-w-sm px-6"
-              >
-                 {result === "SUCCESS" ? (
-                   <div className="bg-white rounded-[2rem] p-8 text-center shadow-2xl relative overflow-hidden">
-                      <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 relative">
-                         <CheckCircle className="w-12 h-12 text-green-500 relative z-10" />
-                         <div className="absolute inset-0 border-4 border-green-500/20 rounded-full animate-ping"></div>
-                      </div>
-                      <h2 className="text-2xl font-black text-[#0A2540] mb-2 cursor-default">تم تسجيل حضورك!</h2>
-                      <p className="text-gray-500 font-bold mb-6">الوقت: {new Date().toLocaleTimeString('ar-EG', { hour12: true, hour: "numeric", minute: "numeric" })}</p>
-                      
-                      <div className="bg-gray-50 p-4 rounded-2xl text-right border border-gray-100 mb-8">
-                         <p className="text-xs text-gray-400 font-bold mb-1">المادة الحالية</p>
-                         <p className="text-[#0A2540] font-black">لغة إنجليزية - الثالث الثانوي</p>
-                      </div>
+              <div className="rounded-full border border-white/10 bg-black/50 px-6 py-3 text-sm font-bold text-white backdrop-blur-md">
+                الكاميرا جاهزة لمسح QR token
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative z-10 w-full max-w-lg px-6"
+            >
+              <div className="rounded-[2rem] bg-white p-8 shadow-2xl">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540]">
+                    <QrCode className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-[#0A2540]">تسجيل حضور الطالب</h2>
+                    <p className="text-sm font-bold text-slate-500">امسح الـ QR ثم اكتب رقم الهاتف والـ PIN المختصر.</p>
+                  </div>
+                </div>
 
-                      <button 
-                         onClick={() => { setScanning(true); setResult(null); }}
-                         className="w-full font-bold text-[#0A2540] bg-gray-100 py-4 rounded-xl hover:bg-gray-200 transition-colors"
-                      >
-                         مسح كود آخر
-                      </button>
-                   </div>
-                 ) : (
-                   <div className="bg-white rounded-[2rem] p-8 text-center shadow-2xl relative overflow-hidden">
-                      <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 relative">
-                         <XCircle className="w-12 h-12 text-red-500 relative z-10" />
-                      </div>
-                      <h2 className="text-2xl font-black text-[#0A2540] mb-2 cursor-default">خطأ في المسح</h2>
-                      <p className="text-gray-500 font-bold mb-8">الكود غير صالح أو لم يتم التعرف عليه لمركز رؤية.</p>
+                <div className="space-y-3">
+                  <label className="block text-sm font-bold text-slate-600">
+                    رقم الهاتف
+                    <div className="mt-1 flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3">
+                      <Phone className="h-4 w-4 text-slate-400" />
+                      <input
+                        value={phone}
+                        onChange={(event) => setPhone(event.target.value)}
+                        placeholder="+20XXXXXXXXXX"
+                        dir="ltr"
+                        className="w-full outline-none"
+                      />
+                    </div>
+                  </label>
 
-                      <button 
-                         onClick={() => { setScanning(true); setResult(null); }}
-                         className="w-full font-bold text-white bg-[#0A2540] py-4 rounded-xl hover:bg-[#0c2f52] transition-colors shadow-lg shadow-[#0A2540]/20"
-                      >
-                         إعادة المحاولة
-                      </button>
-                   </div>
-                 )}
-              </motion.div>
-            )}
-         </AnimatePresence>
+                  <label className="block text-sm font-bold text-slate-600">
+                    الـ PIN
+                    <div className="mt-1 flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3">
+                      <KeyRound className="h-4 w-4 text-slate-400" />
+                      <input
+                        value={pin}
+                        onChange={(event) => setPin(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                        placeholder="123456"
+                        dir="ltr"
+                        className="w-full font-mono outline-none"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block text-sm font-bold text-slate-600">
+                    نص الـ QR
+                    <textarea
+                      value={token}
+                      onChange={(event) => setToken(event.target.value.trim())}
+                      rows={3}
+                      className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 font-mono text-sm outline-none"
+                      placeholder="token"
+                    />
+                  </label>
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => void submit()}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123B66]"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      تسجيل الحضور
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScanning(true);
+                        setResult(null);
+                        setMessage(null);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540]"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      مسح QR آخر
+                    </button>
+                  </div>
+
+                  {message ? (
+                    <div className={`rounded-2xl px-4 py-3 text-sm font-bold ${result === "SUCCESS" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                      {message}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {result === "SUCCESS" ? (
+          <div className="mt-6 rounded-2xl bg-white/10 px-5 py-3 text-center text-sm font-bold text-white backdrop-blur-md">
+            الحضور اتسجل بنجاح
+          </div>
+        ) : null}
       </div>
     </div>
   );

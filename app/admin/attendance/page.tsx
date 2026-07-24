@@ -2,70 +2,93 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, CircleDashed, Download, QrCode, Clock, RefreshCcw } from "lucide-react";
+import { Activity, CircleDashed, Download, QrCode, Clock, RefreshCcw, Users } from "lucide-react";
 import QRCode from "react-qr-code";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
-import {
-  fetchAttendanceRecords,
-  saveAttendanceRecord,
-  subscribeToAttendance,
-  type AttendanceRecord,
-} from "@/src/lib/supabase/attendance";
+import type { AttendanceRecord } from "@/src/lib/supabase/attendance";
+import type { AppUserRecord } from "@/src/lib/supabase/users";
 
-const STORAGE_KEY = "vision-attendance-seed";
+type AttendanceTokenResponse = {
+  token?: string;
+  pin_code?: string;
+  expires_at?: string;
+  student_phone?: string;
+};
 
-const createSeed = () => `VISION-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
-const createPin = () => String(Math.floor(100 + Math.random() * 900));
+type ApiStudent = Pick<AppUserRecord, "id" | "name" | "phone" | "stage" | "grade" | "track" | "student_code">;
+
+const fetchJson = async <T,>(input: RequestInfo | URL, init?: RequestInit): Promise<T | null> => {
+  const response = await fetch(input, {
+    ...init,
+    credentials: "include",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) return null;
+  return (await response.json()) as T;
+};
 
 export default function AttendancePage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
   const [activeTab, setActiveTab] = useState<"LIVE" | "BARCODE">("LIVE");
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [students, setStudents] = useState<ApiStudent[]>([]);
+  const [selectedPhone, setSelectedPhone] = useState("");
   const [qrValue, setQrValue] = useState("");
   const [pinCode, setPinCode] = useState("");
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const barcodeRef = useRef<HTMLDivElement | null>(null);
 
+  const selectedStudent = useMemo(
+    () => students.find((student) => student.phone === selectedPhone) ?? null,
+    [selectedPhone, students],
+  );
+
+  const loadRecords = async () => {
+    const payload = await fetchJson<{ records?: AttendanceRecord[] }>("/api/admin/attendance");
+    if (payload?.records) setRecords(payload.records);
+  };
+
+  const loadStudents = async () => {
+    const payload = await fetchJson<{ students?: ApiStudent[] }>("/api/admin/students");
+    const nextStudents = payload?.students ?? [];
+    setStudents(nextStudents);
+    setSelectedPhone((current) => current || nextStudents[0]?.phone || "");
+  };
+
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
     const load = async () => {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored) as { qrValue?: string; pinCode?: string };
-          if (parsed.qrValue) setQrValue(parsed.qrValue);
-          if (parsed.pinCode) setPinCode(parsed.pinCode);
-        } catch {
-          // ignore
-        }
+      setIsLoading(true);
+      try {
+        await Promise.all([loadRecords(), loadStudents()]);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-
-      if (!qrValue) setQrValue(createSeed());
-      if (!pinCode) setPinCode(createPin());
-
-      const currentRecords = await fetchAttendanceRecords();
-      if (isMounted) setRecords(currentRecords);
     };
 
     void load();
 
-    const unsubscribe = subscribeToAttendance((nextRecords) => {
-      setRecords(nextRecords);
-    });
+    const interval = window.setInterval(() => {
+      if (activeTab === "LIVE") {
+        void loadRecords();
+      }
+    }, 12000);
 
     return () => {
-      isMounted = false;
-      if (unsubscribe) unsubscribe();
+      cancelled = true;
+      window.clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!qrValue || !pinCode) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ qrValue, pinCode }));
-  }, [pinCode, qrValue]);
+  }, [activeTab]);
 
   const downloadBarcode = async () => {
     const svg = barcodeRef.current?.querySelector("svg");
@@ -94,26 +117,42 @@ export default function AttendancePage() {
 
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
-      link.download = "vision-center-checkin.png";
+      link.download = "royacenter-attendance-token.png";
       link.click();
     };
 
     image.src = url;
   };
 
-  const regenerateAccess = async () => {
-    const nextQr = createSeed();
-    const nextPin = createPin();
-    setQrValue(nextQr);
-    setPinCode(nextPin);
+  const issueToken = async () => {
+    if (!selectedPhone) {
+      setMessage("اختار طالب الأول");
+      return;
+    }
 
-    await saveAttendanceRecord({
-      student_name: "تجديد الباركود",
-      code: nextPin,
-      qr_value: nextQr,
-      created_at: new Date().toISOString(),
-      address: "SYSTEM",
-    });
+    setIsLoading(true);
+    setMessage(null);
+    try {
+      const payload = await fetchJson<{ token?: AttendanceTokenResponse }>("/api/admin/attendance-token", {
+        method: "POST",
+        body: JSON.stringify({ student_phone: selectedPhone, valid_for_minutes: 10 }),
+      });
+
+      const tokenData = payload?.token;
+      if (!tokenData?.token || !tokenData.pin_code) {
+        setMessage("فشل توليد التوكن");
+        return;
+      }
+
+      setQrValue(tokenData.token);
+      setPinCode(tokenData.pin_code);
+      setExpiresAt(tokenData.expires_at ?? null);
+      setActiveTab("BARCODE");
+    } catch {
+      setMessage("حصل خطأ أثناء توليد التوكن");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const liveRows = useMemo(() => records.slice(0, 8), [records]);
@@ -124,7 +163,7 @@ export default function AttendancePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-          className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between"
+        className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between"
       >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
@@ -132,20 +171,16 @@ export default function AttendancePage() {
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-[#0A2540]">الحضور الذكي</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500">
-              باركود ثابت للتجربة + شاشة بث مباشر جاهزة للربط.
-            </p>
+            <p className="mt-1 text-sm font-bold text-slate-500">شاشة البث المباشر وتوليد QR token قصير العمر من قاعدة البيانات.</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
           <button
             type="button"
             onClick={() => setActiveTab("LIVE")}
             className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
-              activeTab === "LIVE"
-                ? "bg-white text-[#0A2540] shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+              activeTab === "LIVE" ? "bg-white text-[#0A2540] shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             البث المباشر
@@ -155,9 +190,7 @@ export default function AttendancePage() {
               type="button"
               onClick={() => setActiveTab("BARCODE")}
               className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
-                activeTab === "BARCODE"
-                  ? "bg-white text-[#0A2540] shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
+                activeTab === "BARCODE" ? "bg-white text-[#0A2540] shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
               الباركود الثابت
@@ -176,20 +209,23 @@ export default function AttendancePage() {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-extrabold text-[#0A2540]">شاشة البث المباشر</h2>
-              <p className="mt-1 text-sm font-bold text-slate-500">
-                هتظهر هنا تسجيلات الحضور الفعلية أول ما الطلاب يسجلوا من الموبايل.
-              </p>
+              <p className="mt-1 text-sm font-bold text-slate-500">هنا تظهر تسجيلات الحضور الجديدة أول ما تتسجل من أي جهاز.</p>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">
-              LIVE FEED
-            </span>
+            <button
+              type="button"
+              onClick={() => void loadRecords()}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540]"
+            >
+              <RefreshCcw className="h-4 w-4" />
+              تحديث
+            </button>
           </div>
 
           {liveRows.length === 0 ? (
             <EmptyState
               icon={CircleDashed}
               title="لا توجد تسجيلات حضور حالياً"
-              description="مفيش بيانات حقيقية لسه. الشاشة جاهزة لاستقبال أي طالب يسجل بالموبايل بدون أي بيانات وهمية."
+              description="أول ما يتسجل حضور من شاشة الـ QR هتظهر هنا."
             />
           ) : (
             <div className="overflow-hidden rounded-[1.5rem] border border-slate-200">
@@ -211,9 +247,7 @@ export default function AttendancePage() {
                       <td className="px-4 py-4 text-sm font-bold text-slate-600">{row.grade ?? "-"}</td>
                       <td className="px-4 py-4 text-sm font-bold text-slate-600">{row.track ?? "-"}</td>
                       <td className="px-4 py-4 text-sm font-bold text-slate-600">{row.address ?? "-"}</td>
-                      <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500">
-                        {row.student_phone ?? "-"}
-                      </td>
+                      <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500">{row.student_phone ?? "-"}</td>
                       <td className="px-4 py-4 text-sm font-bold text-slate-500">
                         {row.created_at ? new Date(row.created_at).toLocaleString("ar-EG") : "-"}
                       </td>
@@ -239,47 +273,76 @@ export default function AttendancePage() {
               </div>
               <h2 className="text-2xl font-extrabold text-[#0A2540]">باركود الحضور الثابت</h2>
               <p className="max-w-xl text-sm font-bold leading-7 text-slate-500">
-                استخدم الباركود على مدخل السنتر أو على لوحة الحضور. بعد الربط الحقيقي، نفس الكود ده هيقود صفحة الـ self check-in
-                للموبايل.
+                اختار طالب، ولما تضغط توليد هنحفظ token قصير العمر في قاعدة البيانات ونطلع QR قابل للمسح مع pin منفصل.
               </p>
 
-              <div ref={barcodeRef} className="inline-flex rounded-[2rem] border border-slate-200 bg:white p-4 shadow-lg">
-                <div className="rounded-[1.5rem] border-4 border-[#0A2540] bg-white p-4">
-                  <QRCode value={`${qrValue}|${pinCode}`} size={260} fgColor="#0A2540" />
-                </div>
-              </div>
+              <div className="grid gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+                <label className="space-y-2 text-sm font-bold text-slate-700">
+                  الطالب
+                  <select
+                    value={selectedPhone}
+                    onChange={(event) => setSelectedPhone(event.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none"
+                  >
+                    <option value="">اختر طالب</option>
+                    {students.map((student) => (
+                      <option key={student.phone} value={student.phone}>
+                        {student.name} - {student.phone}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={downloadBarcode}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123B66]"
-                >
-                  <Download className="h-4 w-4" />
-                  تحميل الباركود كصورة
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void regenerateAccess()}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540]"
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                  تجديد الكود
-                </button>
+                {selectedStudent ? (
+                  <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-600">
+                    <div>الاسم: {selectedStudent.name}</div>
+                    <div className="mt-1">الهاتف: {selectedStudent.phone}</div>
+                    <div className="mt-1">الكود: {selectedStudent.student_code ?? "-"}</div>
+                  </div>
+                ) : null}
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void issueToken()}
+                    disabled={isLoading || !selectedPhone}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                    {isLoading ? "جاري التوليد..." : "توليد QR جديد"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadBarcode}
+                    disabled={!qrValue}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    تحميل الصورة
+                  </button>
+                </div>
+
+                {message ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{message}</div> : null}
               </div>
             </div>
 
             <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 p-5">
               <div className="mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-[#D4AF37]" />
-                <h3 className="text-lg font-extrabold text-[#0A2540]">كود الدخول البديل</h3>
+                <h3 className="text-lg font-extrabold text-[#0A2540]">QR والحماية</h3>
               </div>
 
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6 text-center">
-                <p className="text-sm font-bold text-slate-500">الكود المختصر</p>
+              <div ref={barcodeRef} className="inline-flex rounded-[2rem] border border-slate-200 bg-white p-4 shadow-lg">
+                <div className="rounded-[1.5rem] border-4 border-[#0A2540] bg-white p-4">
+                  {qrValue ? <QRCode value={qrValue} size={260} fgColor="#0A2540" /> : <EmptyState icon={Users} title="اختار طالب الأول" description="بعدها هنطلع QR قصير العمر من قاعدة البيانات." />}
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white p-6 text-center">
+                <p className="text-sm font-bold text-slate-500">الـ PIN المختصر</p>
                 <p className="mt-3 text-5xl font-black tracking-[0.3em] text-[#0A2540]">{pinCode || "---"}</p>
                 <p className="mt-3 text-sm font-bold leading-7 text-slate-500">
-                  لو في مشكلة كاميرا، الطالب يكتب 3 أرقام فقط من هنا. بعد الربط الحقيقي هيظهر نفس السجل في لوحة الأدمن.
+                  الطالب هيستخدم الـ QR ده مع رقم الهاتف والـ PIN القصير. {expiresAt ? `ينتهي في ${new Date(expiresAt).toLocaleString("ar-EG")}` : ""}
                 </p>
               </div>
             </div>

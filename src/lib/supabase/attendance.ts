@@ -34,40 +34,69 @@ const normalizeAttendance = (record: SupabaseRecord | null): AttendanceRecord | 
 };
 
 export async function fetchAttendanceRecords(): Promise<AttendanceRecord[]> {
+  if (typeof window !== "undefined") {
+    try {
+      const response = await fetch("/api/admin/attendance", { credentials: "include", cache: "no-store" });
+      if (response.ok) {
+        const payload = (await response.json()) as { records?: AttendanceRecord[] };
+        if (Array.isArray(payload.records)) return payload.records;
+      }
+    } catch {
+      // fall back to direct client access below
+    }
+  }
+
   const client = getSupabaseClient();
   if (!client) return [];
 
-  const { data, error } = await client.from(supabaseTableNames.attendance).select("*");
+  const { data, error } = await client.from(supabaseTableNames.attendance).select("*").order("created_at", { ascending: false });
   if (error || !Array.isArray(data)) return [];
 
-  return data
-    .map((record) => normalizeAttendance(record as SupabaseRecord))
-    .filter((record): record is AttendanceRecord => Boolean(record));
+  return data.map((record) => normalizeAttendance(record as SupabaseRecord)).filter((record): record is AttendanceRecord => Boolean(record));
 }
 
 export async function saveAttendanceRecord(record: AttendanceRecord): Promise<AttendanceRecord | null> {
   const client = getSupabaseClient();
   if (!client) return null;
 
-  const payload = {
-    id: record.id,
+  const { data, error } = await client.rpc("record_attendance", {
     student_name: record.student_name,
-    student_phone: record.student_phone,
-    stage: record.stage,
-    grade: record.grade,
-    track: record.track,
-    address: record.address,
-    code: record.code,
-    qr_value: record.qr_value,
-    created_at: record.created_at ?? new Date().toISOString(),
-  };
+    student_phone: record.student_phone ?? null,
+    stage: record.stage ?? null,
+    grade: record.grade ?? null,
+    track: record.track ?? null,
+    address: record.address ?? null,
+    code: record.code ?? null,
+    qr_value: record.qr_value ?? null,
+  });
 
-  const { data, error } = await client.from(supabaseTableNames.attendance).insert(payload).select("*").single();
-  if (error) return null;
-  return normalizeAttendance(data as SupabaseRecord | null);
+  if (error) {
+    throw new Error(error.message || "ATTENDANCE_SAVE_FAILED");
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return normalizeAttendance(row as SupabaseRecord | null);
 }
 
 export function subscribeToAttendance(callback: (records: AttendanceRecord[]) => void): (() => void) | null {
+  if (typeof window !== "undefined") {
+    let active = true;
+    const tick = async () => {
+      if (!active) return;
+      callback(await fetchAttendanceRecords());
+    };
+
+    void tick();
+    const timer = window.setInterval(() => {
+      void tick();
+    }, 10000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }
+
   const client = getSupabaseClient();
   if (!client) return null;
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bell, CircleDashed, Layers3, School2, User, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
+import { approveAdminPasswordReset } from "@/src/lib/supabase/auth";
+import { fetchUsers, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type Audience = "ALL" | "GROUP" | "STUDENT";
 type SchoolStage = "primary" | "prep" | "secondary";
@@ -36,6 +38,12 @@ const groupOptionsByStage: Record<SchoolStage, string[]> = {
   ],
 };
 
+const getPasswordResetMeta = (item: AppUserRecord) => {
+  const extra = item.extra as Record<string, unknown> | undefined;
+  const passwordReset = extra?.password_reset as Record<string, unknown> | undefined;
+  return passwordReset ?? null;
+};
+
 export default function NotificationsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
@@ -47,8 +55,51 @@ export default function NotificationsPage() {
   const [studentCode, setStudentCode] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [resetRequests, setResetRequests] = useState<AppUserRecord[]>([]);
+  const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
 
   const availableGroups = useMemo(() => groupOptionsByStage[stage], [stage]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRequests = async () => {
+      const users = await fetchUsers();
+      const pending = users.filter((item) => {
+        const meta = getPasswordResetMeta(item);
+        return meta?.status === "pending";
+      });
+      if (isMounted) {
+        setResetRequests(pending);
+      }
+    };
+
+    void loadRequests();
+
+    const unsubscribe = subscribeToUsers((users) => {
+      const pending = users.filter((item) => {
+        const meta = getPasswordResetMeta(item);
+        return meta?.status === "pending";
+      });
+      if (isMounted) {
+        setResetRequests(pending);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  const approveReset = async (phone: string) => {
+    setApprovalLoading(phone);
+    try {
+      await approveAdminPasswordReset(phone);
+    } finally {
+      setApprovalLoading(null);
+    }
+  };
 
   if (!isAdmin) {
     return (
@@ -87,6 +138,58 @@ export default function NotificationsPage() {
         transition={{ duration: 0.35, delay: 0.05 }}
         className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
+        <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">طلبات استرجاع كلمة المرور</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-300">
+                الطلبات المعلقة بتظهر هنا، وبعد الموافقة يقدر المستخدم يغيّر الباسورد خلال 24 ساعة.
+              </p>
+            </div>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 dark:bg-white/10 dark:text-amber-200">
+              {resetRequests.length} طلب
+            </span>
+          </div>
+
+          {resetRequests.length === 0 ? (
+            <EmptyState
+              icon={CircleDashed}
+              title="لا توجد طلبات معلقة"
+              description="أي طلب استرجاع جديد هيظهر هنا بمجرد تسجيله من التطبيق."
+            />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {resetRequests.map((request) => (
+                <div key={request.phone} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-extrabold text-[#0A2540] dark:text-white">{request.name}</h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{request.phone}</p>
+                    </div>
+                    <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                      {request.role}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      {String(getPasswordResetMeta(request)?.requested_at ?? "")}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void approveReset(request.phone)}
+                      disabled={approvalLoading === request.phone}
+                      className="rounded-xl bg-[#0A2540] px-4 py-2 text-sm font-black text-white disabled:opacity-60"
+                    >
+                      {approvalLoading === request.phone ? "جاري..." : "موافقة 24 ساعة"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">الفئة المستهدفة</h2>
