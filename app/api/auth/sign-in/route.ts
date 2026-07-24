@@ -10,12 +10,8 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_MASTER_ADMIN_ACCESS_CODE ??
     "";
   const isMasterAdminLogin = body.expectedRole === "master_admin";
-  const loginPhone = isMasterAdminLogin
-    ? process.env.MASTER_ADMIN_PHONE ?? body.phone ?? ""
-    : body.phone ?? "";
-  const loginPassword = isMasterAdminLogin
-    ? process.env.MASTER_ADMIN_PASSWORD ?? body.password ?? ""
-    : body.password ?? "";
+  const loginPhone = isMasterAdminLogin ? process.env.MASTER_ADMIN_PHONE ?? "" : body.phone ?? "";
+  const loginPassword = isMasterAdminLogin ? process.env.MASTER_ADMIN_PASSWORD ?? "" : body.password ?? "";
 
   const phone = normalizeEgyptianPhone(loginPhone);
   if (isMasterAdminLogin) {
@@ -24,11 +20,11 @@ export async function POST(request: Request) {
     }
   }
 
-  if (isMasterAdminLogin && !process.env.MASTER_ADMIN_PHONE && !process.env.MASTER_ADMIN_PASSWORD && (!body.phone || !body.password)) {
+  if (isMasterAdminLogin && (!process.env.MASTER_ADMIN_PHONE || !process.env.MASTER_ADMIN_PASSWORD)) {
     return NextResponse.json({ error: "لازم تضبط MASTER_ADMIN_PHONE و MASTER_ADMIN_PASSWORD على Vercel" }, { status: 500 });
   }
 
-  if (!phone || loginPassword.length < 8) return NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 });
+  if (!phone || !loginPassword) return NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 });
 
   const supabase = createRouteSupabaseClient(await cookies());
   const { data, error } = await supabase.auth.signInWithPassword({ phone, password: loginPassword });
