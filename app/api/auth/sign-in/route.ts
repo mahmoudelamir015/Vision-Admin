@@ -10,10 +10,6 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_MASTER_ADMIN_ACCESS_CODE ??
     "";
   const isMasterAdminLogin = body.expectedRole === "master_admin";
-  const loginPhone = isMasterAdminLogin ? process.env.MASTER_ADMIN_PHONE ?? "" : body.phone ?? "";
-  const loginPassword = isMasterAdminLogin ? process.env.MASTER_ADMIN_PASSWORD ?? "" : body.password ?? "";
-
-  const phone = normalizeEgyptianPhone(loginPhone);
   if (isMasterAdminLogin) {
     if (!body.accessCode || body.accessCode !== configuredAccessCode) {
       return NextResponse.json({ error: "كود دخول المدير غير صحيح" }, { status: 403 });
@@ -24,10 +20,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "لازم تضبط MASTER_ADMIN_PHONE و MASTER_ADMIN_PASSWORD على Vercel" }, { status: 500 });
   }
 
-  if (!phone || !loginPassword) return NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 });
+  const loginPassword = isMasterAdminLogin ? process.env.MASTER_ADMIN_PASSWORD ?? "" : body.password ?? "";
 
   const supabase = createRouteSupabaseClient(await cookies());
-  const { data, error } = await supabase.auth.signInWithPassword({ phone, password: loginPassword });
+  const phoneCandidates = isMasterAdminLogin
+    ? Array.from(
+        new Set(
+          [
+            process.env.MASTER_ADMIN_PHONE ?? "",
+            normalizeEgyptianPhone(process.env.MASTER_ADMIN_PHONE ?? "") ?? "",
+            body.phone ?? "",
+            normalizeEgyptianPhone(body.phone ?? "") ?? "",
+          ].filter((candidate) => candidate.trim().length > 0),
+        ),
+      )
+    : [normalizeEgyptianPhone(body.phone ?? "") ?? ""].filter((candidate) => candidate.trim().length > 0);
+
+  if (!phoneCandidates.length || !loginPassword) {
+    return NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 });
+  }
+
+  let data: { user: { id: string } | null } = { user: null };
+  let error: { message?: string } | null = null;
+  for (const candidatePhone of phoneCandidates) {
+    const attempt = await supabase.auth.signInWithPassword({ phone: candidatePhone, password: loginPassword });
+    data = { user: attempt.data?.user ?? null };
+    error = attempt.error ?? null;
+    if (data.user) break;
+  }
+
   if (error || !data.user) return NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 });
 
   const { data: profile } = await supabase
