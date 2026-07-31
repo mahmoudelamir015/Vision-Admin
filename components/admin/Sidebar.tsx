@@ -3,7 +3,9 @@
 import Link from "next/link";
 import {
   Bell,
+  Eye,
   FileText,
+  LayoutDashboard,
   LogOut,
   Shield,
   UserCheck,
@@ -11,31 +13,42 @@ import {
   Users,
   Vault,
   Wallet,
-  Eye,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "./AuthContext";
 
+type NavGroup = "core" | "finance" | "management" | "content";
+
 interface NavItem {
   name: string;
   href: string;
-  icon: any;
+  icon: typeof Shield;
   permission: string;
+  group: NavGroup;
+  masterOnly?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { name: "غرفة العمليات الشاملة", href: "/admin", icon: Shield, permission: "control-room" },
-  { name: "إدارة الطلاب", href: "/admin/users", icon: Users, permission: "students" },
-  { name: "الحضور الذكي", href: "/admin/attendance", icon: UserCheck, permission: "attendance" },
-  { name: "المحفظة والماليات", href: "/admin/wallet", icon: Wallet, permission: "wallet" },
-  { name: "شحن المحفظة", href: "/admin/wallet/topup", icon: Wallet, permission: "wallet" },
-  { name: "إدارة الموظفين", href: "/admin/staff", icon: UserPlus, permission: "staff" },
-  { name: "غرفة العمليات", href: "/admin/operations", icon: Eye, permission: "operations" },
-  { name: "الخزنة", href: "/admin/vault", icon: Vault, permission: "vault" },
-  { name: "إدارة المحتوى", href: "/admin/content", icon: FileText, permission: "content" },
-  { name: "مركز الإشعارات", href: "/admin/notifications", icon: Bell, permission: "notifications" },
+  { name: "غرفة العمليات الشاملة", href: "/admin", icon: LayoutDashboard, permission: "control-room", group: "core" },
+  { name: "إدارة الطلاب", href: "/admin/users", icon: Users, permission: "students", group: "core" },
+  { name: "الحضور الذكي", href: "/admin/attendance", icon: UserCheck, permission: "attendance", group: "core" },
+  { name: "المحفظة والماليات", href: "/admin/wallet", icon: Wallet, permission: "wallet", group: "finance" },
+  { name: "شحن المحفظة", href: "/admin/wallet/topup", icon: Wallet, permission: "wallet", group: "finance" },
+  { name: "تقفيل اليومية", href: "/admin/wallet/daily-close", icon: Wallet, permission: "wallet", group: "finance", masterOnly: true },
+  { name: "إدارة الموظفين", href: "/admin/staff", icon: UserPlus, permission: "staff", group: "management" },
+  { name: "غرفة العمليات", href: "/admin/operations", icon: Eye, permission: "operations", group: "management" },
+  { name: "الخزنة", href: "/admin/vault", icon: Vault, permission: "vault", group: "management", masterOnly: true },
+  { name: "إدارة المحتوى", href: "/admin/content", icon: FileText, permission: "content", group: "content", masterOnly: true },
+  { name: "مركز الإشعارات", href: "/admin/notifications", icon: Bell, permission: "notifications", group: "content", masterOnly: true },
 ];
+
+const groupLabels: Record<NavGroup, string> = {
+  core: "الأساسيات",
+  finance: "الماليات",
+  management: "الإدارة",
+  content: "المحتوى",
+};
 
 export default function Sidebar({
   isMobileMenuOpen,
@@ -49,7 +62,20 @@ export default function Sidebar({
 
   if (!user || pathname === "/admin/login") return null;
 
-  const filteredNavItems = navItems.filter((item) => user.permissions.includes(item.permission));
+  const isMasterAdmin = user.role === "master_admin" || user.permissions.includes("*");
+  const visibleItems = navItems.filter((item) => {
+    if (item.masterOnly) return isMasterAdmin;
+    if (isMasterAdmin) return true;
+    return user.permissions.includes(item.permission);
+  });
+
+  const groupedItems = (Object.keys(groupLabels) as NavGroup[])
+    .map((group) => ({
+      key: group,
+      title: groupLabels[group],
+      items: visibleItems.filter((item) => item.group === group),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <aside
@@ -59,11 +85,11 @@ export default function Sidebar({
         isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "translate-x-full",
       )}
     >
-      <div className="absolute top-[-5%] right-[-20%] w-48 h-48 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-[-5%] right-[-20%] h-48 w-48 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
-      <div className="h-16 lg:h-28 flex flex-col items-center justify-center border-b border-white/10 gap-1 lg:gap-2 px-4 shrink-0 relative">
+      <div className="relative flex h-16 shrink-0 flex-col items-center justify-center gap-1 border-b border-white/10 px-4 lg:h-28 lg:gap-2">
         <button
-          className="lg:hidden absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white/60 hover:bg-white/10 rounded-lg"
+          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/60 hover:bg-white/10 lg:hidden"
           onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
           type="button"
         >
@@ -72,65 +98,61 @@ export default function Sidebar({
             <path d="m6 6 12 12" />
           </svg>
         </button>
-        <div className="text-[#D4AF37] font-black text-xl lg:text-2xl tracking-tighter flex items-center gap-2">
+
+        <div className="flex items-center gap-2 text-xl font-black tracking-tighter text-[#D4AF37] lg:text-2xl">
           Vision Center
         </div>
-        <div className="bg-white/10 px-3 py-1 rounded-full text-[10px] lg:text-xs font-medium text-white/80 border border-white/5">
+        <div className="rounded-full border border-white/5 bg-white/10 px-3 py-1 text-[10px] font-medium text-white/80 lg:text-xs">
           {user.name} ({user.role === "master_admin" ? "المدير" : "موظف"})
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1.5 font-sans font-bold overflow-y-auto z-10 pt-6">
-        <p className="text-xs text-white/40 mb-4 px-3 uppercase tracking-wider font-semibold">
-          {user.role === "master_admin" ? "MASTER ADMIN" : "STAFF ACCESS"}
+      <nav className="z-10 flex-1 overflow-y-auto p-4 pt-6 font-sans font-bold">
+        <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+          {isMasterAdmin ? "MASTER ADMIN" : "STAFF ACCESS"}
         </p>
 
-        {filteredNavItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
+        <div className="space-y-4">
+          {groupedItems.map((group) => (
+            <div key={group.key} className="space-y-2">
+              <p className="px-3 text-[11px] font-black uppercase tracking-[0.3em] text-white/30">
+                {group.title}
+              </p>
+              <div className="space-y-1.5">
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
-                isActive
-                  ? "bg-[#D4AF37] text-[#0A2540] shadow-lg shadow-[#D4AF37]/20 font-black translate-x-1"
-                  : "text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1",
-              )}
-            >
-              <Icon className={cn("shrink-0 transition-transform", isActive ? "w-5 h-5 scale-110" : "w-5 h-5")} />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
-
-        {user.role === "master_admin" ? (
-          <Link
-            href="/admin/wallet/daily-close"
-            onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
-              pathname === "/admin/wallet/daily-close"
-                ? "bg-[#D4AF37] text-[#0A2540] shadow-lg shadow-[#D4AF37]/20 font-black translate-x-1"
-                : "text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1",
-            )}
-          >
-            <Wallet className="w-5 h-5" />
-            <span>تقفيل اليومية</span>
-          </Link>
-        ) : null}
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300",
+                        isActive
+                          ? "bg-[#D4AF37] text-[#0A2540] shadow-lg shadow-[#D4AF37]/20 font-black translate-x-1"
+                          : "text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1",
+                      )}
+                    >
+                      <Icon className={cn("shrink-0 transition-transform", isActive ? "h-5 w-5 scale-110" : "h-5 w-5")} />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </nav>
 
-      <div className="p-4 border-t border-white/10 z-10 shrink-0">
+      <div className="z-10 shrink-0 border-t border-white/10 p-4">
         <button
           onClick={logout}
           type="button"
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-400 transition-all font-bold w-full"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-bold text-red-300 transition-all hover:bg-red-500/10 hover:text-red-400"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="h-5 w-5" />
           تسجيل الخروج
         </button>
       </div>
