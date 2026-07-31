@@ -6,6 +6,7 @@ export type AdminProfile = { id: string; name: string; phone: string; role: Admi
 
 export async function getCurrentAdminProfile(): Promise<AdminProfile | null> {
   const supabase = createRouteSupabaseClient(await cookies());
+  const { data: authUser } = await supabase.auth.getUser();
   const claimsResult = await supabase.auth.getClaims();
   const claims = claimsResult.data?.claims ?? null;
   if (!claims?.sub) return null;
@@ -14,6 +15,22 @@ export async function getCurrentAdminProfile(): Promise<AdminProfile | null> {
     .select("id, name, phone, role, permissions")
     .eq("auth_user_id", claims.sub)
     .maybeSingle();
-  if (!data || (data.role !== "master_admin" && data.role !== "staff")) return null;
-  return { ...data, permissions: Array.isArray(data.permissions) ? data.permissions : [] } as AdminProfile;
+
+  if (data && (data.role === "master_admin" || data.role === "staff")) {
+    return { ...data, permissions: Array.isArray(data.permissions) ? data.permissions : [] } as AdminProfile;
+  }
+
+  const masterAdminEmail = (process.env.MASTER_ADMIN_EMAIL ?? "").trim().toLowerCase();
+  const signedInEmail = authUser.user?.email?.trim().toLowerCase() ?? "";
+  if (masterAdminEmail && signedInEmail === masterAdminEmail) {
+    return {
+      id: claims.sub,
+      name: "المدير العام",
+      phone: authUser.user?.email ?? masterAdminEmail,
+      role: "master_admin",
+      permissions: ["*"],
+    };
+  }
+
+  return null;
 }

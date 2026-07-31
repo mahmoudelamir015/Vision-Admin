@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
   let loginResult:
     | {
-        data: { user: { id: string } | null };
+        data: { user: { id: string; email?: string | null } | null };
         error: { message?: string } | null;
       }
     | undefined;
@@ -54,12 +54,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase.from("users").select("id, name, phone, role, permissions").eq("auth_user_id", data.user.id).maybeSingle();
+  const { data: profile } = await supabase
+    .from("users")
+    .select("id, name, phone, role, permissions")
+    .eq("auth_user_id", data.user.id)
+    .maybeSingle();
 
-  if (!profile || (profile.role !== "master_admin" && profile.role !== "staff") || (body.expectedRole && profile.role !== body.expectedRole)) {
-    await supabase.auth.signOut();
-    return NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 });
+  const normalizedMasterAdminEmail = (process.env.MASTER_ADMIN_EMAIL ?? "").trim().toLowerCase();
+  const signedInEmail = data.user.email?.trim().toLowerCase() ?? "";
+  const isMasterAdminUser = isMasterAdminLogin || (normalizedMasterAdminEmail && signedInEmail === normalizedMasterAdminEmail);
+
+  if (profile && (profile.role === "master_admin" || profile.role === "staff")) {
+    if (body.expectedRole && profile.role !== body.expectedRole) {
+      await supabase.auth.signOut();
+      return NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 });
+    }
+
+    return NextResponse.json({
+      profile: {
+        ...profile,
+        permissions: Array.isArray(profile.permissions) ? profile.permissions : [],
+      },
+    });
   }
 
-  return NextResponse.json({ profile: { ...profile, permissions: Array.isArray(profile.permissions) ? profile.permissions : [] } });
+  if (isMasterAdminUser) {
+    return NextResponse.json({
+      profile: {
+        id: data.user.id,
+        name: "المدير العام",
+        phone: normalizedMasterAdminEmail || data.user.email || "",
+        role: "master_admin",
+        permissions: ["*"],
+      },
+    });
+  }
+
+  await supabase.auth.signOut();
+  return NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 });
 }
