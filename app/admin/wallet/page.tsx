@@ -27,6 +27,7 @@ export default function WalletPage() {
   const [isRegistrationSaving, setIsRegistrationSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"CHARGE" | "LEDGER" | "SETTLEMENT">("CHARGE");
   const [entries, setEntries] = useState<WalletEntry[]>([]);
+  const [searchDraft, setSearchDraft] = useState("");
   const [searchCode, setSearchCode] = useState("");
   const [chargeOwner, setChargeOwner] = useState("");
   const [chargeAmount, setChargeAmount] = useState("");
@@ -115,6 +116,16 @@ export default function WalletPage() {
     } finally {
       setIsRegistrationSaving(false);
     }
+  };
+
+  const applySearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearchCode(searchDraft.trim());
+  };
+
+  const clearSearch = () => {
+    setSearchDraft("");
+    setSearchCode("");
   };
 
   const filteredEntries = searchCode.trim()
@@ -341,20 +352,34 @@ export default function WalletPage() {
             </div>
           </div>
 
-          <div className="mb-5 grid gap-3 md:grid-cols-[1fr_auto]">
+          <form onSubmit={applySearch} className="mb-5 grid gap-3 md:grid-cols-[1fr_auto_auto]">
             <input
-              value={searchCode}
-              onChange={(event) => setSearchCode(event.target.value)}
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
               placeholder="مثال: VIS-101 أو 010XXXXXXXX"
               className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
             />
             <button
-              type="button"
-              className="rounded-xl border border-slate-200 px-5 py-3 font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+              type="submit"
+              className="rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
             >
               بحث
             </button>
-          </div>
+            <button
+              type="button"
+              onClick={clearSearch}
+              disabled={!searchDraft && !searchCode}
+              className="rounded-xl border border-slate-200 px-5 py-3 font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300"
+            >
+              مسح
+            </button>
+          </form>
+
+          {searchCode ? (
+            <div className="mb-4 rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-4 py-3 text-sm font-bold text-[#0A2540] dark:text-[#D4AF37]">
+              نتائج البحث عن: <span className="font-black">{searchCode}</span>
+            </div>
+          ) : null}
 
           <EmptyState
             icon={CircleDashed}
