@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
-import { createRouteSupabaseClient } from "@/src/lib/supabase/server";
+import { createRouteSupabaseClientWithBufferedCookies } from "@/src/lib/supabase/server";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -13,12 +13,12 @@ export async function POST(request: Request) {
 
   const configuredAccessCode = process.env.MASTER_ADMIN_ACCESS_CODE ?? process.env.NEXT_PUBLIC_MASTER_ADMIN_ACCESS_CODE ?? "";
   const isMasterAdminLogin = body.expectedRole === "master_admin";
+  const cookieStore = await cookies();
+  const { supabase, attachBufferedCookies } = createRouteSupabaseClientWithBufferedCookies(cookieStore);
 
   if (isMasterAdminLogin && (!body.accessCode || body.accessCode !== configuredAccessCode)) {
-    return NextResponse.json({ error: "كود دخول المدير غير صحيح" }, { status: 403 });
+    return attachBufferedCookies(NextResponse.json({ error: "كود دخول المدير غير صحيح" }, { status: 403 }));
   }
-
-  const supabase = createRouteSupabaseClient(await cookies());
 
   let loginResult:
     | {
@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     const masterAdminPassword = process.env.MASTER_ADMIN_PASSWORD ?? "";
 
     if (!masterAdminEmail || !masterAdminPassword) {
-      return NextResponse.json({ error: "لازم تضبط MASTER_ADMIN_EMAIL و MASTER_ADMIN_PASSWORD على Vercel" }, { status: 500 });
+      return attachBufferedCookies(
+        NextResponse.json({ error: "لازم تضبط MASTER_ADMIN_EMAIL و MASTER_ADMIN_PASSWORD على Vercel" }, { status: 500 }),
+      );
     }
 
     loginResult = await supabase.auth.signInWithPassword({ email: masterAdminEmail, password: masterAdminPassword });
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
     const password = body.password ?? "";
 
     if (!phone || password.length < 8) {
-      return NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 });
+      return attachBufferedCookies(NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 }));
     }
 
     loginResult = await supabase.auth.signInWithPassword({ phone, password });
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
   const error = loginResult?.error ?? null;
 
   if (error || !data.user) {
-    return NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 });
+    return attachBufferedCookies(NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 }));
   }
 
   const { data: profile } = await supabase
@@ -67,29 +69,33 @@ export async function POST(request: Request) {
   if (profile && (profile.role === "master_admin" || profile.role === "staff")) {
     if (body.expectedRole && profile.role !== body.expectedRole) {
       await supabase.auth.signOut();
-      return NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 });
+      return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 }));
     }
 
-    return NextResponse.json({
-      profile: {
-        ...profile,
-        permissions: Array.isArray(profile.permissions) ? profile.permissions : [],
-      },
-    });
+    return attachBufferedCookies(
+      NextResponse.json({
+        profile: {
+          ...profile,
+          permissions: Array.isArray(profile.permissions) ? profile.permissions : [],
+        },
+      }),
+    );
   }
 
   if (isMasterAdminUser) {
-    return NextResponse.json({
-      profile: {
-        id: data.user.id,
-        name: "المدير العام",
-        phone: normalizedMasterAdminEmail || data.user.email || "",
-        role: "master_admin",
-        permissions: ["*"],
-      },
-    });
+    return attachBufferedCookies(
+      NextResponse.json({
+        profile: {
+          id: data.user.id,
+          name: "المدير العام",
+          phone: normalizedMasterAdminEmail || data.user.email || "",
+          role: "master_admin",
+          permissions: ["*"],
+        },
+      }),
+    );
   }
 
   await supabase.auth.signOut();
-  return NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 });
+  return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 }));
 }

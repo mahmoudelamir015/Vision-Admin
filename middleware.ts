@@ -34,25 +34,33 @@ export async function middleware(request: NextRequest) {
   });
 
   const { data: authUser } = await supabase.auth.getUser();
-  const claimsResult = await supabase.auth.getClaims();
-  const claims = claimsResult.data?.claims ?? null;
+  const user = authUser.user;
 
-  const signedInEmail = authUser.user?.email?.trim().toLowerCase() ?? "";
+  const signedInEmail = user?.email?.trim().toLowerCase() ?? "";
   const isMasterAdminByEmail = Boolean(masterAdminEmail && signedInEmail === masterAdminEmail);
-  if (!claims?.sub) return isLogin ? response : NextResponse.redirect(new URL("/admin/login", request.url));
+  
+  const applyRedirect = (urlPath: string) => {
+    const redirectUrl = new URL(urlPath, request.url);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    const setCookieHeaders = response.headers.getSetCookie();
+    setCookieHeaders.forEach((c) => redirectResponse.headers.append("Set-Cookie", c));
+    return redirectResponse;
+  };
+
+  if (!user) return isLogin ? response : applyRedirect("/admin/login");
 
   if (isMasterAdminByEmail) {
-    if (isLogin) return NextResponse.redirect(new URL("/admin", request.url));
+    if (isLogin) return applyRedirect("/admin");
     return response;
   }
 
-  const { data } = await supabase.from("users").select("role, permissions").eq("auth_user_id", claims.sub).maybeSingle();
+  const { data } = await supabase.from("users").select("role, permissions").eq("auth_user_id", user.id).maybeSingle();
   const profile = data as AdminProfile | null;
   if (!profile || (profile.role !== "master_admin" && profile.role !== "staff")) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    return applyRedirect("/admin/login");
   }
-  if (isLogin) return NextResponse.redirect(new URL(profile.role === "master_admin" ? "/admin" : "/admin/attendance", request.url));
-  if (!canAccess(request.nextUrl.pathname, profile)) return NextResponse.redirect(new URL("/admin/attendance", request.url));
+  if (isLogin) return applyRedirect(profile.role === "master_admin" ? "/admin" : "/admin/attendance");
+  if (!canAccess(request.nextUrl.pathname, profile)) return applyRedirect("/admin/attendance");
   return response;
 }
 
