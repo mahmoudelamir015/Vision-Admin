@@ -55,6 +55,7 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const selectedStudent = useMemo(
     () => students.find((student) => student.id === selectedStudentId) ?? null,
@@ -107,6 +108,7 @@ export default function UsersPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setFeedback(null);
   };
 
   const handleStageChange = (stage: StudentStage) => {
@@ -122,6 +124,7 @@ export default function UsersPage() {
     event.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.grade.trim()) return;
 
+    setFeedback(null);
     setIsSaving(true);
     try {
       const currentStudent = editingId ? students.find((student) => student.id === editingId) ?? null : null;
@@ -138,17 +141,26 @@ export default function UsersPage() {
       });
 
       if (saved) {
-        setStudents((current) =>
-          editingId ? current.map((item) => (item.phone === saved.phone ? saved : item)) : [saved, ...current],
-        );
+        setStudents((current) => {
+          if (editingId) {
+            return current.map((item) => (item.id === saved.id ? saved : item));
+          }
+          return [saved, ...current.filter((item) => item.id !== saved.id)];
+        });
 
         if (!editingId) {
           setNextCode((current) => current + 1);
         }
 
         setSelectedStudentId(saved.id ?? null);
+        setFeedback({ type: "success", message: editingId ? "تم حفظ الطالب بنجاح" : "تم إضافة الطالب بنجاح" });
         resetForm();
+      } else {
+        setFeedback({ type: "error", message: "تعذر حفظ الطالب. تأكد من صحة البيانات والمحاولة مرة أخرى." });
       }
+    } catch (error) {
+      console.error("Failed to save student", error);
+      setFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء الحفظ." });
     } finally {
       setIsSaving(false);
     }
@@ -206,6 +218,18 @@ export default function UsersPage() {
             </p>
           </div>
         </div>
+
+        {feedback ? (
+          <div
+            className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
+              feedback.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
+            {feedback.message}
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="grid gap-3 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_auto]">
           <input

@@ -21,6 +21,17 @@ export type AppUserRecord = {
   extra?: Record<string, unknown>;
 };
 
+const readExtra = (record: SupabaseRecord | null): Record<string, unknown> => {
+  if (!record || !record.extra || typeof record.extra !== "object") return {};
+  return record.extra as Record<string, unknown>;
+};
+
+const normalizeStringArray = (value: unknown): string[] | undefined => {
+  if (!Array.isArray(value)) return undefined;
+  const items = value.filter((item): item is string => typeof item === "string");
+  return items.length > 0 ? items : [];
+};
+
 const normalizeUser = (record: SupabaseRecord | null): AppUserRecord | null => {
   if (!record) return null;
 
@@ -37,16 +48,18 @@ const normalizeUser = (record: SupabaseRecord | null): AppUserRecord | null => {
 
   if (!name || !phone || !role) return null;
 
+  const extra = readExtra(record);
+  const permissions = normalizeStringArray(record.permissions) ?? normalizeStringArray(extra.permissions);
+  const active = typeof record.active === "boolean" ? record.active : typeof extra.active === "boolean" ? extra.active : undefined;
+
   return {
     id: typeof record.id === "string" ? record.id : undefined,
     auth_user_id: typeof record.auth_user_id === "string" ? record.auth_user_id : undefined,
     name,
     phone,
     role,
-    permissions: Array.isArray(record.permissions)
-      ? record.permissions.filter((item): item is string => typeof item === "string")
-      : undefined,
-    active: typeof record.active === "boolean" ? record.active : undefined,
+    permissions,
+    active,
     stage: typeof record.stage === "string" ? record.stage : undefined,
     grade: typeof record.grade === "string" ? record.grade : undefined,
     track: typeof record.track === "string" ? record.track : undefined,
@@ -56,7 +69,7 @@ const normalizeUser = (record: SupabaseRecord | null): AppUserRecord | null => {
       ? record.subjects.filter((item): item is string => typeof item === "string")
       : undefined,
     student_code: typeof record.student_code === "string" ? record.student_code : undefined,
-    extra: record.extra && typeof record.extra === "object" ? (record.extra as Record<string, unknown>) : undefined,
+    extra: Object.keys(extra).length > 0 ? extra : undefined,
   };
 };
 
@@ -97,8 +110,6 @@ const buildPayload = (user: AppUserRecord) => ({
   name: user.name,
   phone: user.phone,
   role: user.role,
-  permissions: user.permissions ?? [],
-  active: user.active ?? true,
   stage: user.stage,
   grade: user.grade,
   track: user.track,
@@ -106,12 +117,18 @@ const buildPayload = (user: AppUserRecord) => ({
   parent_phone: user.parent_phone,
   subjects: user.subjects ?? [],
   student_code: user.student_code,
-  extra: user.extra ?? {},
+  extra: {
+    ...(user.extra ?? {}),
+    ...(user.permissions ? { permissions: user.permissions } : {}),
+    ...(typeof user.active === "boolean" ? { active: user.active } : {}),
+  },
 });
 
 export async function fetchUsers(role?: AppUserRole): Promise<AppUserRecord[]> {
   if (typeof window !== "undefined") {
-    const payload = await adminApiRequest<{ users?: SupabaseRecord[] }>(role ? `/api/admin/users?role=${encodeURIComponent(role)}` : "/api/admin/users");
+    const payload = await adminApiRequest<{ users?: SupabaseRecord[] }>(
+      role ? `/api/admin/users?role=${encodeURIComponent(role)}` : "/api/admin/users",
+    );
     if (Array.isArray(payload?.users)) {
       const normalized = payload.users
         .map((record) => normalizeUser(record as SupabaseRecord))
@@ -156,7 +173,7 @@ export async function createUser(user: AppUserRecord): Promise<AppUserRecord | n
   if (typeof window !== "undefined") {
     const normalizedUser = normalizeUserInput(user);
     if (!normalizedUser) return null;
-    const response = await adminApiRequest<{ user?: SupabaseRecord }>("/api/admin/users", {
+    const response = await adminApiRequest<{ user?: SupabaseRecord }>('/api/admin/users', {
       method: "POST",
       body: JSON.stringify(buildPayload(normalizedUser)),
     });
@@ -178,7 +195,7 @@ export async function updateUser(user: AppUserRecord): Promise<AppUserRecord | n
   if (typeof window !== "undefined") {
     const normalizedUser = normalizeUserInput(user);
     if (!normalizedUser || !normalizedUser.id) return null;
-    const response = await adminApiRequest<{ user?: SupabaseRecord }>("/api/admin/users", {
+    const response = await adminApiRequest<{ user?: SupabaseRecord }>('/api/admin/users', {
       method: "PATCH",
       body: JSON.stringify({ ...buildPayload(normalizedUser), id: normalizedUser.id }),
     });
@@ -208,7 +225,7 @@ export async function saveUser(user: AppUserRecord): Promise<AppUserRecord | nul
 
 export async function deleteUser(id: string): Promise<boolean> {
   if (typeof window !== "undefined") {
-    const response = await adminApiRequest<{ ok?: boolean }>("/api/admin/users", {
+    const response = await adminApiRequest<{ ok?: boolean }>('/api/admin/users', {
       method: "DELETE",
       body: JSON.stringify({ id }),
     });

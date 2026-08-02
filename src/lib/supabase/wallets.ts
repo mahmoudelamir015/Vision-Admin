@@ -51,7 +51,7 @@ async function adminApiRequest<T>(path: string, init?: RequestInit): Promise<T |
 
 export async function fetchWalletEntries(): Promise<WalletEntry[]> {
   if (typeof window !== "undefined") {
-    const payload = await adminApiRequest<{ wallets?: SupabaseRecord[] }>("/api/admin/wallets");
+    const payload = await adminApiRequest<{ wallets?: SupabaseRecord[] }>("/api/legacy/admin/wallets");
     if (Array.isArray(payload?.wallets)) {
       return payload.wallets
         .map((record) => normalizeEntry(record as SupabaseRecord))
@@ -80,7 +80,7 @@ export async function saveWalletEntry(entry: WalletEntry): Promise<WalletEntry |
       student_phone: entry.student_phone,
     };
 
-    const response = await adminApiRequest<{ wallet?: SupabaseRecord }>("/api/admin/wallets", {
+    const response = await adminApiRequest<{ wallet?: SupabaseRecord }>("/api/legacy/admin/wallets", {
       method: "POST",
       body: JSON.stringify(payload),
     });
