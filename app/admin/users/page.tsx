@@ -122,7 +122,13 @@ export default function UsersPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || !form.grade.trim()) return;
+    if (!form.name.trim() || !form.phone.trim() || !form.grade.trim()) {
+      setFeedback({
+        type: "error",
+        message: "من فضلك أكمل الاسم والهاتف والصف قبل الحفظ.",
+      });
+      return;
+    }
 
     setFeedback(null);
     setIsSaving(true);
