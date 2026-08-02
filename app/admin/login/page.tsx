@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { ArrowLeft, Building2, Eye, EyeOff, Loader2, LockKeyhole, Shield, Sparkles, UserRound } from "lucide-react";
 
@@ -36,7 +35,6 @@ async function authRequest<T>(payload: unknown): Promise<T> {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const [tab, setTab] = useState<LoginTab>("master_admin");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -58,7 +56,7 @@ export default function LoginPage() {
         accessCode: tab === "master_admin" ? accessCode : undefined,
       });
 
-      router.replace(result.profile.role === "master_admin" ? "/admin" : "/admin/attendance");
+      window.location.assign(result.profile.role === "master_admin" ? "/admin" : "/admin/attendance");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "حدث خطأ أثناء تسجيل الدخول.");
     } finally {
