@@ -12,6 +12,14 @@ export async function POST(request: Request) {
   };
 
   const configuredAccessCode = process.env.MASTER_ADMIN_ACCESS_CODE ?? process.env.NEXT_PUBLIC_MASTER_ADMIN_ACCESS_CODE ?? "";
+  const normalizedPhone = normalizeEgyptianPhone(body.phone ?? "");
+  const rawPhone = (body.phone ?? "").trim();
+  console.log("[admin-sign-in] attempt", {
+    expectedRole: body.expectedRole,
+    phone: rawPhone,
+    normalizedPhone,
+    hasAccessCode: Boolean(body.accessCode),
+  });
   const isMasterAdminLogin = body.expectedRole === "master_admin";
   const cookieStore = await cookies();
   const { supabase, attachBufferedCookies } = createRouteSupabaseClientWithBufferedCookies(cookieStore);
@@ -39,18 +47,26 @@ export async function POST(request: Request) {
 
     loginResult = await supabase.auth.signInWithPassword({ email: masterAdminEmail, password: masterAdminPassword });
   } else {
-    const phone = normalizeEgyptianPhone(body.phone ?? "");
     const password = body.password ?? "";
+    const candidatePhones = [normalizedPhone, rawPhone].filter((value): value is string => Boolean(value));
 
-    if (!phone || password.length < 8) {
+    if (candidatePhones.length === 0 || password.length < 8) {
       return attachBufferedCookies(NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 }));
     }
 
-    loginResult = await supabase.auth.signInWithPassword({ phone, password });
+    for (const candidatePhone of candidatePhones) {
+      loginResult = await supabase.auth.signInWithPassword({ phone: candidatePhone, password });
+      if (!loginResult.error) break;
+    }
   }
 
   const data = loginResult?.data ?? { user: null };
   const error = loginResult?.error ?? null;
+  console.log("[admin-sign-in] result", {
+    userId: data.user?.id ?? null,
+    email: data.user?.email ?? null,
+    errorMessage: error?.message ?? null,
+  });
 
   if (error || !data.user) {
     return attachBufferedCookies(NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 }));

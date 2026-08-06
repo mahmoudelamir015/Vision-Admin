@@ -14,6 +14,13 @@ function canAccess(pathname: string, profile: AdminProfile) {
 
 export async function middleware(request: NextRequest) {
   const isLogin = request.nextUrl.pathname === "/admin/login";
+  const cookieNames = request.cookies.getAll().map(({ name }) => name);
+  console.log("[admin-middleware] start", {
+    pathname: request.nextUrl.pathname,
+    isLogin,
+    cookieCount: cookieNames.length,
+    cookieNames,
+  });
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -33,8 +40,15 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const { data: authUser } = await supabase.auth.getUser();
+  const { data: authUser, error: authError } = await supabase.auth.getUser();
   const user = authUser.user;
+  console.log("[admin-middleware] auth", {
+    pathname: request.nextUrl.pathname,
+    hasUser: Boolean(user),
+    userId: user?.id ?? null,
+    email: user?.email ?? null,
+    authError: authError?.message ?? null,
+  });
 
   const signedInEmail = user?.email?.trim().toLowerCase() ?? "";
   const isMasterAdminByEmail = Boolean(masterAdminEmail && signedInEmail === masterAdminEmail);
