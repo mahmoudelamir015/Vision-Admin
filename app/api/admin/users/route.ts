@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { randomUUID } from "crypto";
 import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
 import { getCurrentAdminProfile } from "@/src/lib/auth/session";
 import { createRouteSupabaseClient } from "@/src/lib/supabase/server";
@@ -79,6 +80,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("users")
     .insert({
+      id: payload.id ?? randomUUID(),
       auth_user_id: payload.auth_user_id,
       name: payload.name,
       phone: payload.phone,
