@@ -34,17 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await closeRegistrationIfPastDeadline();
 
-        const client = getSupabaseClient();
-        const session = client ? await client.auth.getSession() : null;
-
-        if (!session?.data.session) {
-          if (isMounted) {
-            setUser(null);
-            setIsLoading(false);
-          }
-          return;
-        }
-
         const response = await fetch("/api/auth/me", {
           method: "GET",
           cache: "no-store",
