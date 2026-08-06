@@ -45,6 +45,7 @@ export default function StaffPage() {
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNowTimestamp(Date.now());
   }, []);
 
