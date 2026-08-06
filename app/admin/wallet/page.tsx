@@ -32,6 +32,8 @@ export default function WalletPage() {
   const [chargeOwner, setChargeOwner] = useState("");
   const [chargeAmount, setChargeAmount] = useState("");
   const [chargeReason, setChargeReason] = useState("");
+  const [chargeMessage, setChargeMessage] = useState<string | null>(null);
+  const [chargeStatus, setChargeStatus] = useState<"success" | "error" | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -78,25 +80,54 @@ export default function WalletPage() {
 
   const handleCharge = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!isWalletEnabled) return;
-    if (!chargeOwner.trim() || !chargeAmount.trim()) return;
+    setChargeMessage(null);
+    setChargeStatus(null);
+
+    if (!isWalletEnabled) {
+      setChargeStatus("error");
+      setChargeMessage("المحفظة متوقفة، لا يمكن تسجيل الشحن الآن.");
+      return;
+    }
+
+    if (!chargeOwner.trim() || !chargeAmount.trim()) {
+      setChargeStatus("error");
+      setChargeMessage("من فضلك أكمل اسم الطالب والمبلغ قبل الحفظ.");
+      return;
+    }
+
+    const amountValue = Number(chargeAmount);
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+      setChargeStatus("error");
+      setChargeMessage("ادخل مبلغ صالح أكبر من صفر.");
+      return;
+    }
 
     setIsSaving(true);
     try {
       const saved = await saveWalletEntry({
         owner: chargeOwner.trim(),
         account_type: "student",
-        amount: Number(chargeAmount),
+        amount: amountValue,
         reason: chargeReason.trim() || "شحن رصيد الطالب",
         created_at: new Date().toISOString(),
       });
 
-      if (saved) {
-        setEntries((current) => [saved, ...current]);
-        setChargeOwner("");
-        setChargeAmount("");
-        setChargeReason("");
+      if (!saved) {
+        setChargeStatus("error");
+        setChargeMessage("فشل تسجيل الشحن. حاول مرة أخرى.");
+        return;
       }
+
+      setEntries((current) => [saved, ...current]);
+      setChargeOwner("");
+      setChargeAmount("");
+      setChargeReason("");
+      setChargeStatus("success");
+      setChargeMessage("تم تسجيل الشحن بنجاح.");
+    } catch (error) {
+      console.error("Failed to register charge", error);
+      setChargeStatus("error");
+      setChargeMessage("حدث خطأ غير متوقع أثناء تسجيل الشحن.");
     } finally {
       setIsSaving(false);
     }
@@ -284,6 +315,17 @@ export default function WalletPage() {
               >
                 {isSaving ? "جارٍ الحفظ..." : "تسجيل الشحن"}
               </button>
+              {chargeMessage ? (
+                <div
+                  className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
+                    chargeStatus === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {chargeMessage}
+                </div>
+              ) : null}
             </form>
           </motion.section>
 

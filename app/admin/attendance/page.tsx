@@ -53,12 +53,12 @@ export default function AttendancePage() {
   );
 
   const loadRecords = async () => {
-    const payload = await fetchJson<{ records?: AttendanceRecord[] }>("/api-legacy/admin/attendance");
+    const payload = await fetchJson<{ records?: AttendanceRecord[] }>("/api/admin/attendance");
     if (payload?.records) setRecords(payload.records);
   };
 
   const loadStudents = async () => {
-    const payload = await fetchJson<{ students?: ApiStudent[] }>("/api-legacy/admin/students");
+    const payload = await fetchJson<{ students?: ApiStudent[] }>("/api/admin/students");
     const nextStudents = payload?.students ?? [];
     setStudents(nextStudents);
     setSelectedPhone((current) => current || nextStudents[0]?.phone || "");
@@ -133,7 +133,7 @@ export default function AttendancePage() {
     setIsLoading(true);
     setMessage(null);
     try {
-      const payload = await fetchJson<{ token?: AttendanceTokenResponse }>("/api-legacy/admin/attendance-token", {
+      const payload = await fetchJson<{ token?: AttendanceTokenResponse }>("/api/admin/attendance-token", {
         method: "POST",
         body: JSON.stringify({ student_phone: selectedPhone, valid_for_minutes: 10 }),
       });

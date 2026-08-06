@@ -26,6 +26,7 @@ async function authRequest<T>(payload: unknown): Promise<T> {
   const response = await fetch("/api/auth/sign-in", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(payload),
   });
 
@@ -40,12 +41,30 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showAccessCode, setShowAccessCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+
+    if (tab === "master_admin") {
+      if (!accessCode.trim()) {
+        setError("من فضلك أدخل كود المدير.");
+        return;
+      }
+    } else {
+      if (!phone.trim() || !password.trim()) {
+        setError("من فضلك أدخل رقم الهاتف وكلمة المرور.");
+        return;
+      }
+      if (password.length < 8) {
+        setError("يجب أن تكون كلمة المرور 8 أحرف على الأقل.");
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
@@ -149,15 +168,25 @@ export default function LoginPage() {
               {tab === "master_admin" ? (
                 <div className="space-y-3">
                   <label className="block text-sm font-bold text-slate-700">كود دخول المدير</label>
-                  <input
-                    type="password"
-                    value={accessCode}
-                    onChange={(event) => setAccessCode(event.target.value)}
-                    placeholder="500500"
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center text-base font-semibold tracking-[0.28em] text-[#0A2540] outline-none transition-all placeholder:text-slate-300 focus:border-[#D4AF37] focus:bg-[#FFFCF7] focus:ring-4 focus:ring-[#D4AF37]/10"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showAccessCode ? "text" : "password"}
+                      value={accessCode}
+                      onChange={(event) => setAccessCode(event.target.value)}
+                      placeholder="أدخل كود المدير"
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 pr-12 text-center text-base font-semibold tracking-[0.28em] text-[#0A2540] outline-none transition-all placeholder:text-slate-300 focus:border-[#D4AF37] focus:bg-[#FFFCF7] focus:ring-4 focus:ring-[#D4AF37]/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAccessCode((current) => !current)}
+                      className="absolute inset-y-0 right-4 flex items-center text-slate-400"
+                      aria-label={showAccessCode ? "إخفاء الكود" : "عرض الكود"}
+                    >
+                      {showAccessCode ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
               ) : null}
 

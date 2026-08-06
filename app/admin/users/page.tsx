@@ -54,6 +54,7 @@ export default function UsersPage() {
   const [form, setForm] = useState<StudentForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
@@ -169,6 +170,31 @@ export default function UsersPage() {
       setFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء الحفظ." });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteStudent = async (student: AppUserRecord) => {
+    if (!student.id) return;
+    setMemberActionLoading(student.id);
+    setFeedback(null);
+
+    try {
+      const deleted = await deleteUser(student.id);
+      if (!deleted) {
+        setFeedback({ type: "error", message: "حدث خطأ أثناء حذف الطالب. حاول مرة أخرى." });
+        return;
+      }
+
+      setStudents((current) => current.filter((item) => item.id !== student.id));
+      if (selectedStudentId === student.id) {
+        setSelectedStudentId(null);
+      }
+      setFeedback({ type: "success", message: "تم حذف الطالب بنجاح." });
+    } catch (error) {
+      console.error("Failed to delete student", error);
+      setFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء حذف الطالب." });
+    } finally {
+      setMemberActionLoading(null);
     }
   };
 
@@ -389,23 +415,24 @@ export default function UsersPage() {
                         <button
                           type="button"
                           onClick={() => startEdit(student)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                          disabled={memberActionLoading === student.id}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-slate-600 transition-colors ${
+                            memberActionLoading === student.id ? "border-slate-200 bg-slate-100 cursor-wait opacity-70" : "border-slate-200 bg-slate-50 hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                          }`}
                         >
                           <Edit3 className="h-4 w-4" />
                           تعديل
                         </button>
                         <button
                           type="button"
-                          onClick={async () => {
-                            if (student.id) {
-                              await deleteUser(student.id);
-                            }
-                            setStudents((current) => current.filter((item) => item.phone !== student.phone));
-                          }}
-                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
+                          onClick={() => void handleDeleteStudent(student)}
+                          disabled={memberActionLoading === student.id}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-red-600 transition-colors ${
+                            memberActionLoading === student.id ? "border-red-200 bg-red-100 cursor-wait opacity-70" : "border-red-200 bg-red-50 hover:bg-red-100"
+                          }`}
                         >
                           <Trash2 className="h-4 w-4" />
-                          حذف
+                          {memberActionLoading === student.id ? "جارٍ الحذف..." : "حذف"}
                         </button>
                       </div>
                     </td>

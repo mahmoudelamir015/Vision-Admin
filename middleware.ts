@@ -31,11 +31,15 @@ export async function middleware(request: NextRequest) {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (items) => {
-        items.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        items.forEach(({ name, value, options }) => response.cookies.set(name, value, {
-          ...(options as CookieOptions), httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/",
-        }));
+        items.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, {
+            ...(options as CookieOptions),
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+          });
+        });
       },
     },
   });
@@ -56,7 +60,7 @@ export async function middleware(request: NextRequest) {
   const applyRedirect = (urlPath: string) => {
     const redirectUrl = new URL(urlPath, request.url);
     const redirectResponse = NextResponse.redirect(redirectUrl);
-    const setCookieHeaders = response.headers.getSetCookie();
+    const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
     setCookieHeaders.forEach((c) => redirectResponse.headers.append("Set-Cookie", c));
     return redirectResponse;
   };

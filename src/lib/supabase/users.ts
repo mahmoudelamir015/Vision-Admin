@@ -86,7 +86,7 @@ const normalizeUserInput = (user: AppUserRecord): AppUserRecord | null => {
   };
 };
 
-async function adminApiRequest<T>(path: string, init?: RequestInit): Promise<T | null> {
+async function adminApiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     const response = await fetch(path, {
       ...init,
@@ -98,31 +98,67 @@ async function adminApiRequest<T>(path: string, init?: RequestInit): Promise<T |
       },
     });
 
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
+    const text = await response.text();
+    if (!response.ok) {
+      let errorMessage = text;
+      try {
+        const parsed = JSON.parse(text);
+        errorMessage = typeof parsed === "object" && parsed !== null && "error" in parsed ? (parsed as { error?: string }).error ?? text : text;
+      } catch {
+        // ignore invalid JSON
+      }
+
+      console.error("Admin API request failed", {
+        path,
+        status: response.status,
+        statusText: response.statusText,
+        body: errorMessage,
+      });
+      throw new Error(errorMessage || `${response.status} ${response.statusText}`);
+    }
+
+    if (!text) {
+      return {} as T;
+    }
+
+    return JSON.parse(text) as T;
+  } catch (error) {
+    console.error("Admin API request error", path, error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Admin API request failed");
   }
 }
 
-const buildPayload = (user: AppUserRecord) => ({
-  auth_user_id: user.auth_user_id,
-  name: user.name,
-  phone: user.phone,
-  role: user.role,
-  stage: user.stage,
-  grade: user.grade,
-  track: user.track,
-  school_name: user.school_name,
-  parent_phone: user.parent_phone,
-  subjects: user.subjects ?? [],
-  student_code: user.student_code,
-  extra: {
-    ...(user.extra ?? {}),
-    ...(user.permissions ? { permissions: user.permissions } : {}),
-    ...(typeof user.active === "boolean" ? { active: user.active } : {}),
-  },
-});
+const buildPayload = (user: AppUserRecord) => {
+  const payload: Record<string, unknown> = {
+    auth_user_id: user.auth_user_id,
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+    stage: user.stage,
+    grade: user.grade,
+    track: user.track,
+    school_name: user.school_name,
+    parent_phone: user.parent_phone,
+    subjects: user.subjects ?? [],
+    student_code: user.student_code,
+    extra: {
+      ...(user.extra ?? {}),
+    },
+  };
+
+  if (Array.isArray(user.permissions)) {
+    payload.permissions = user.permissions;
+  }
+
+  if (typeof user.active === "boolean") {
+    payload.active = user.active;
+  }
+
+  return payload;
+};
 
 export async function fetchUsers(role?: AppUserRole): Promise<AppUserRecord[]> {
   if (typeof window !== "undefined") {
@@ -173,6 +209,7 @@ export async function createUser(user: AppUserRecord): Promise<AppUserRecord | n
   if (typeof window !== "undefined") {
     const normalizedUser = normalizeUserInput(user);
     if (!normalizedUser) return null;
+
     const response = await adminApiRequest<{ user?: SupabaseRecord }>('/api/admin/users', {
       method: "POST",
       body: JSON.stringify(buildPayload(normalizedUser)),
@@ -195,6 +232,7 @@ export async function updateUser(user: AppUserRecord): Promise<AppUserRecord | n
   if (typeof window !== "undefined") {
     const normalizedUser = normalizeUserInput(user);
     if (!normalizedUser || !normalizedUser.id) return null;
+
     const response = await adminApiRequest<{ user?: SupabaseRecord }>('/api/admin/users', {
       method: "PATCH",
       body: JSON.stringify({ ...buildPayload(normalizedUser), id: normalizedUser.id }),
@@ -225,11 +263,16 @@ export async function saveUser(user: AppUserRecord): Promise<AppUserRecord | nul
 
 export async function deleteUser(id: string): Promise<boolean> {
   if (typeof window !== "undefined") {
-    const response = await adminApiRequest<{ ok?: boolean }>('/api/admin/users', {
-      method: "DELETE",
-      body: JSON.stringify({ id }),
-    });
-    return Boolean(response?.ok);
+    try {
+      const response = await adminApiRequest<{ ok?: boolean }>('/api/admin/users', {
+        method: "DELETE",
+        body: JSON.stringify({ id }),
+      });
+      return Boolean(response?.ok);
+    } catch (error) {
+      console.error("Failed to delete user", error);
+      return false;
+    }
   }
 
   const client = getSupabaseClient();

@@ -78,6 +78,9 @@ export default function AdminControlRoomPage() {
   const [staffName, setStaffName] = useState("");
   const [staffPhone, setStaffPhone] = useState("");
   const [staffPermission, setStaffPermission] = useState<StaffPermission>("attendance");
+  const [staffFormFeedback, setStaffFormFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [isStaffSaving, setIsStaffSaving] = useState(false);
+  const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
   const [teacherRatio, setTeacherRatio] = useState("60");
   const [lessonPrice, setLessonPrice] = useState("250");
   const [autoSettlement, setAutoSettlement] = useState("80");
@@ -199,33 +202,99 @@ export default function AdminControlRoomPage() {
 
   const addStaffMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!staffName.trim() || !staffPhone.trim()) return;
+    setStaffFormFeedback(null);
 
-    const saved = await saveUser({
-      name: staffName.trim(),
-      phone: staffPhone.trim(),
-      role: "staff",
-      permissions: [staffPermission],
-      active: true,
-    });
+    if (!staffName.trim() || !staffPhone.trim()) {
+      setStaffFormFeedback({ type: "error", message: "من فضلك اكتب الاسم والهاتف قبل الإضافة." });
+      return;
+    }
 
-    if (saved) {
+    setIsStaffSaving(true);
+    try {
+      const saved = await saveUser({
+        name: staffName.trim(),
+        phone: staffPhone.trim(),
+        role: "staff",
+        permissions: [staffPermission],
+        active: true,
+      });
+
+      if (!saved) {
+        setStaffFormFeedback({ type: "error", message: "حدث خطأ أثناء حفظ الموظف. تأكد من البيانات وحاول مرة أخرى." });
+        return;
+      }
+
       setStaff((current) => [saved, ...current.filter((item) => item.phone !== saved.phone)]);
       setStaffName("");
       setStaffPhone("");
       setStaffPermission("attendance");
+      setStaffFormFeedback({ type: "success", message: "تم إضافة الموظف بنجاح." });
+    } catch (error) {
+      console.error("Failed to add staff member", error);
+      setStaffFormFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء حفظ الموظف." });
+    } finally {
+      setIsStaffSaving(false);
     }
   };
 
   const updateStaffMember = async (member: AppUserRecord, patch: Partial<AppUserRecord>) => {
-    const saved = await saveUser({
-      ...member,
-      role: "staff",
-      ...patch,
-    });
+    if (!member.id) return;
+    setMemberActionLoading(member.id);
+    setStaffFormFeedback(null);
 
-    if (saved) {
-      setStaff((current) => current.map((item) => (item.phone === member.phone ? saved : item)));
+    try {
+      const saved = await saveUser({
+        ...member,
+        role: "staff",
+        ...patch,
+      });
+
+      if (!saved) {
+        setStaffFormFeedback({
+          type: "error",
+          message: "تعذر حفظ بيانات الموظف. حاول مرة أخرى.",
+        });
+        return;
+      }
+
+      setStaff((current) => current.map((item) => (item.id === member.id ? saved : item)));
+      setStaffFormFeedback({ type: "success", message: "تم تحديث بيانات الموظف بنجاح." });
+    } catch (error) {
+      console.error("Failed to update staff member", error);
+      setStaffFormFeedback({
+        type: "error",
+        message: "حدث خطأ غير متوقع أثناء تحديث بيانات الموظف.",
+      });
+    } finally {
+      setMemberActionLoading(null);
+    }
+  };
+
+  const handleDeleteStaff = async (member: AppUserRecord) => {
+    if (!member.id) return;
+    setMemberActionLoading(member.id);
+    setStaffFormFeedback(null);
+
+    try {
+      const deleted = await deleteUser(member.id);
+      if (!deleted) {
+        setStaffFormFeedback({
+          type: "error",
+          message: "حدث خطأ أثناء حذف الموظف. حاول مرة أخرى.",
+        });
+        return;
+      }
+
+      setStaff((current) => current.filter((item) => item.phone !== member.phone));
+      setStaffFormFeedback({ type: "success", message: "تم حذف الموظف بنجاح." });
+    } catch (error) {
+      console.error("Failed to delete staff member", error);
+      setStaffFormFeedback({
+        type: "error",
+        message: "حدث خطأ غير متوقع أثناء حذف الموظف.",
+      });
+    } finally {
+      setMemberActionLoading(null);
     }
   };
 
@@ -390,12 +459,24 @@ export default function AdminControlRoomPage() {
               </select>
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                disabled={isStaffSaving}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
               >
                 <Plus className="h-4 w-4" />
-                إضافة
+                {isStaffSaving ? "جاري الإضافة..." : "إضافة"}
               </button>
             </form>
+            {staffFormFeedback ? (
+              <div
+                className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
+                  staffFormFeedback.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-red-200 bg-red-50 text-red-700"
+                }`}
+              >
+                {staffFormFeedback.message}
+              </div>
+            ) : null}
 
             <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-slate-200 dark:border-white/10">
               {staff.length === 0 ? (
@@ -429,7 +510,10 @@ export default function AdminControlRoomPage() {
                               onChange={(event) =>
                                 void updateStaffMember(member, { permissions: [event.target.value as StaffPermission] })
                               }
-                              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-black/20"
+                              disabled={memberActionLoading === member.id}
+                              className={`rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none dark:border-white/10 dark:bg-black/20 ${
+                                memberActionLoading === member.id ? "cursor-wait opacity-70" : ""
+                              }`}
                             >
                               <option value="attendance">الحضور</option>
                               <option value="wallet">المحفظة</option>
@@ -440,8 +524,11 @@ export default function AdminControlRoomPage() {
                             <button
                               type="button"
                               onClick={() => void updateStaffMember(member, { active: !member.active })}
-                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black ${
-                                member.active
+                            disabled={memberActionLoading === member.id}
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black ${
+                              memberActionLoading === member.id
+                                ? "bg-slate-100 text-slate-400 cursor-wait opacity-70"
+                                : member.active
                                   ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
                                   : "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400"
                               }`}
@@ -452,19 +539,15 @@ export default function AdminControlRoomPage() {
                           <td className="px-4 py-4 text-left">
                             <button
                               type="button"
-                              onClick={() =>
-                                void (async () => {
-                                  if (member.id) {
-                                    await deleteUser(member.id);
-                                  }
-                                  setStaff((current) => current.filter((item) => item.phone !== member.phone));
-                                })()
-                              }
-                              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              حذف
-                            </button>
+                              onClick={() => void handleDeleteStaff(member)}
+                            disabled={memberActionLoading === member.id}
+                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-red-600 transition-colors ${
+                              memberActionLoading === member.id ? "border-red-200 bg-red-100 cursor-wait opacity-70" : "border-red-200 bg-red-50 hover:bg-red-100"
+                            }`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {memberActionLoading === member.id ? "جارٍ الحذف..." : "حذف"}
+                          </button>
                           </td>
                         </tr>
                       ))}

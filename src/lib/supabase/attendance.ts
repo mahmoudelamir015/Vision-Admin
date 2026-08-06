@@ -36,7 +36,7 @@ const normalizeAttendance = (record: SupabaseRecord | null): AttendanceRecord | 
 export async function fetchAttendanceRecords(): Promise<AttendanceRecord[]> {
   if (typeof window !== "undefined") {
     try {
-      const response = await fetch("/api-legacy/admin/attendance", { credentials: "include", cache: "no-store" });
+      const response = await fetch("/api/admin/attendance", { credentials: "include", cache: "no-store" });
       if (response.ok) {
         const payload = (await response.json()) as { records?: AttendanceRecord[] };
         if (Array.isArray(payload.records)) return payload.records;

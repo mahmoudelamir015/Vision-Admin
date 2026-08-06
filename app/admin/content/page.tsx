@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { CircleDashed, FileText, ShieldAlert, Upload } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
@@ -8,6 +9,10 @@ import EmptyState from "@/components/admin/EmptyState";
 export default function ContentPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   if (!isAdmin) {
     return (
@@ -62,9 +67,51 @@ export default function ContentPage() {
           </div>
 
           <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-white/10 dark:bg-white/5">
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-300">اسحب الملف هنا أو اختر من الجهاز</p>
-            <p className="mt-2 text-xs font-medium text-slate-400">PWA ready • Mobile first</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="*"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                if (!file) {
+                  setSelectedFileName(null);
+                  setUploadMessage(null);
+                  return;
+                }
+                setSelectedFileName(file.name);
+                setUploadMessage("تم اختيار الملف بنجاح، سيتم ربط الرفع لاحقاً عند تكوين الـ API.");
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex min-h-[8rem] w-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-white dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+            >
+              <div>
+                <p className="mb-3">اسحب الملف هنا أو اختر من الجهاز</p>
+                <p className="text-xs font-medium text-slate-400">PWA ready • Mobile first</p>
+                {selectedFileName ? (
+                  <p className="mt-4 text-sm text-slate-700 dark:text-white">الملف المحدد: {selectedFileName}</p>
+                ) : null}
+              </div>
+            </button>
           </div>
+          <button
+            type="button"
+            disabled
+            className="mt-4 inline-flex w-full items-center justify-center rounded-[1.5rem] border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:bg-white/10 dark:text-slate-300"
+          >
+            رفع الملف غير مفعل بعد
+          </button>
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+            الرفع حالياً هو واجهة تحضيرية فقط. يحتاج إنشاء API رفع أو تكامل Supabase Storage ليعمل بالشكل الحقيقي.
+          </div>
+          {uploadMessage ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+              {uploadMessage}
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

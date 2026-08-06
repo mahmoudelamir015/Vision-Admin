@@ -44,12 +44,29 @@ const getPasswordResetMeta = (item: AppUserRecord) => {
   return passwordReset ?? null;
 };
 
+const getPasswordResetStatus = (meta: Record<string, unknown> | null) => {
+  if (!meta?.status || typeof meta.status !== "string") return "غير مطلوب";
+  if (meta.status === "pending") return "معلقة";
+  if (meta.status === "approved") {
+    const approvedUntil = typeof meta.approved_until === "string" ? new Date(meta.approved_until) : null;
+    if (approvedUntil && approvedUntil.getTime() > Date.now()) return "موافق عليها";
+    return "منتهية";
+  }
+  return "غير مطلوب";
+};
+
+const formatApprovedUntil = (meta: Record<string, unknown> | null) => {
+  if (typeof meta?.approved_until !== "string") return null;
+  const date = new Date(meta.approved_until);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("ar-EG");
+};
+
 export default function NotificationsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
-
-  const [audience, setAudience] = useState<Audience>("ALL");
   const [stage, setStage] = useState<SchoolStage>("secondary");
+  const [audience, setAudience] = useState<Audience>("ALL");
   const [groupName, setGroupName] = useState(groupOptionsByStage.secondary[0]);
   const [section, setSection] = useState("");
   const [studentCode, setStudentCode] = useState("");
@@ -57,6 +74,7 @@ export default function NotificationsPage() {
   const [body, setBody] = useState("");
   const [resetRequests, setResetRequests] = useState<AppUserRecord[]>([]);
   const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
+  const [approvalMessage, setApprovalMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const availableGroups = useMemo(() => groupOptionsByStage[stage], [stage]);
 
@@ -94,8 +112,14 @@ export default function NotificationsPage() {
 
   const approveReset = async (phone: string) => {
     setApprovalLoading(phone);
+    setApprovalMessage(null);
+
     try {
       await approveAdminPasswordReset(phone);
+      setApprovalMessage({ type: "success", message: "تمت الموافقة على طلب إعادة كلمة المرور بنجاح." });
+    } catch (error) {
+      console.error("Failed to approve password reset", error);
+      setApprovalMessage({ type: "error", message: "فشل الموافقة على الطلب. حاول مرة أخرى." });
     } finally {
       setApprovalLoading(null);
     }
@@ -149,8 +173,17 @@ export default function NotificationsPage() {
             <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 dark:bg-white/10 dark:text-amber-200">
               {resetRequests.length} طلب
             </span>
-          </div>
-
+          </div>          {approvalMessage ? (
+            <div
+              className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
+                approvalMessage.type === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-red-200 bg-red-50 text-red-700"
+              }`}
+            >
+              {approvalMessage.message}
+            </div>
+          ) : null}
           {resetRequests.length === 0 ? (
             <EmptyState
               icon={CircleDashed}

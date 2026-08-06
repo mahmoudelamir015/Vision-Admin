@@ -10,7 +10,7 @@ export type SystemSettings = {
 export async function fetchSystemSettings(): Promise<SystemSettings | null> {
   if (typeof window !== "undefined") {
     try {
-      const response = await fetch("/api-legacy/admin/system-settings", { credentials: "include", cache: "no-store" });
+      const response = await fetch("/api/admin/system-settings", { credentials: "include", cache: "no-store" });
       if (response.ok) {
         const payload = (await response.json()) as { settings?: SystemSettings | null };
         return payload.settings ?? null;
@@ -82,7 +82,7 @@ export async function closeRegistrationIfPastDeadline(): Promise<SystemSettings 
 export async function updateSystemSettings(settings: Partial<SystemSettings>): Promise<SystemSettings | null> {
   if (typeof window !== "undefined") {
     try {
-        const response = await fetch("/api-legacy/admin/system-settings", {
+        const response = await fetch("/api/admin/system-settings", {
         method: "PATCH",
         credentials: "include",
         cache: "no-store",

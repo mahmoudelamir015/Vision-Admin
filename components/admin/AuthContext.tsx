@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { closeRegistrationIfPastDeadline } from "@/src/lib/supabase/system-settings";
+import { getSupabaseClient } from "@/src/lib/supabase/index";
 
 type User = {
   id: string;
@@ -32,6 +33,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const hydrate = async () => {
       try {
         await closeRegistrationIfPastDeadline();
+
+        const client = getSupabaseClient();
+        const session = client ? await client.auth.getSession() : null;
+
+        if (!session?.data.session) {
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+          return;
+        }
 
         const response = await fetch("/api/auth/me", {
           method: "GET",
