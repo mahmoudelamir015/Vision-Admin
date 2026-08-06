@@ -175,7 +175,10 @@ export default function StaffPage() {
       setStaffFormFeedback({ type: "success", message: "تم إضافة الموظف بنجاح." });
     } catch (error) {
       console.error("Failed to add staff", error);
-      setStaffFormFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء إضافة الموظف." });
+      setStaffFormFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء إضافة الموظف.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -213,7 +216,7 @@ export default function StaffPage() {
       console.error("Failed to update staff member", error);
       setStaffFormFeedback({
         type: "error",
-        message: "حدث خطأ غير متوقع أثناء تحديث بيانات الموظف.",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء تحديث بيانات الموظف.",
       });
     } finally {
       setMemberActionLoading(null);
@@ -244,7 +247,7 @@ export default function StaffPage() {
       console.error("Failed to delete staff member", error);
       setStaffFormFeedback({
         type: "error",
-        message: "حدث خطأ غير متوقع أثناء حذف الموظف.",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء حذف الموظف.",
       });
     } finally {
       setMemberActionLoading(null);

@@ -231,7 +231,10 @@ export default function AdminControlRoomPage() {
       setStaffFormFeedback({ type: "success", message: "تم إضافة الموظف بنجاح." });
     } catch (error) {
       console.error("Failed to add staff member", error);
-      setStaffFormFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء حفظ الموظف." });
+      setStaffFormFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء حفظ الموظف.",
+      });
     } finally {
       setIsStaffSaving(false);
     }
@@ -263,7 +266,7 @@ export default function AdminControlRoomPage() {
       console.error("Failed to update staff member", error);
       setStaffFormFeedback({
         type: "error",
-        message: "حدث خطأ غير متوقع أثناء تحديث بيانات الموظف.",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء تحديث بيانات الموظف.",
       });
     } finally {
       setMemberActionLoading(null);
@@ -291,7 +294,7 @@ export default function AdminControlRoomPage() {
       console.error("Failed to delete staff member", error);
       setStaffFormFeedback({
         type: "error",
-        message: "حدث خطأ غير متوقع أثناء حذف الموظف.",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء حذف الموظف.",
       });
     } finally {
       setMemberActionLoading(null);

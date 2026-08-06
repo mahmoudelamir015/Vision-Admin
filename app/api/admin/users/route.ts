@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { randomUUID } from "crypto";
 import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
 import { getCurrentAdminProfile } from "@/src/lib/auth/session";
+import { createServiceSupabaseClient } from "@/src/lib/supabase/admin";
 import { createRouteSupabaseClient } from "@/src/lib/supabase/server";
 
 type UserBody = {
@@ -21,7 +21,19 @@ type UserBody = {
   subjects?: unknown;
   student_code?: string | null;
   extra?: unknown;
+  password?: string | null;
 };
+
+function getReadableSupabaseError(error: unknown) {
+  const message = error && typeof error === "object" && "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  const code = error && typeof error === "object" && "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+
+  if (code === "23505" || /already (?:exists|registered)|duplicate key|unique/i.test(message)) {
+    return "رقم الهاتف مسجل بالفعل";
+  }
+
+  return message || "حدث خطأ غير متوقع";
+}
 
 function normalizePayload(body: UserBody) {
   const phone = normalizeEgyptianPhone(body.phone ?? "");
@@ -42,6 +54,27 @@ function normalizePayload(body: UserBody) {
     subjects: Array.isArray(body.subjects) ? body.subjects.filter((item): item is string => typeof item === "string") : [],
     student_code: typeof body.student_code === "string" ? body.student_code : undefined,
     extra: body.extra && typeof body.extra === "object" ? (body.extra as Record<string, unknown>) : {},
+    password: typeof body.password === "string" ? body.password : undefined,
+  };
+}
+
+function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserId: string) {
+  return {
+    id: authUserId,
+    auth_user_id: authUserId,
+    name: payload.name,
+    phone: payload.phone,
+    role: payload.role,
+    permissions: payload.permissions,
+    active: payload.active,
+    stage: payload.stage ?? null,
+    grade: payload.grade ?? null,
+    track: payload.track ?? null,
+    school_name: payload.school_name ?? null,
+    parent_phone: payload.parent_phone ?? null,
+    subjects: payload.subjects,
+    student_code: payload.student_code ?? null,
+    extra: payload.extra,
   };
 }
 
@@ -76,30 +109,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "بيانات المستخدم غير مكتملة" }, { status: 400 });
   }
 
-  const supabase = createRouteSupabaseClient(await cookies());
+  if (payload.role === "student" && payload.parent_phone && payload.parent_phone === payload.phone) {
+    return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
+  }
+
+  const supabase = createServiceSupabaseClient();
+  const authAttributes: Parameters<typeof supabase.auth.admin.createUser>[0] = {
+    phone: payload.phone,
+    phone_confirm: true,
+    user_metadata: {
+      name: payload.name,
+      role: payload.role,
+      stage: payload.stage ?? null,
+      grade: payload.grade ?? null,
+      track: payload.track ?? null,
+      school_name: payload.school_name ?? null,
+      parent_phone: payload.parent_phone ?? null,
+      subjects: payload.subjects,
+      student_code: payload.student_code ?? null,
+    },
+  };
+
+  if (payload.password && payload.password.length >= 8) {
+    authAttributes.password = payload.password;
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser(authAttributes);
+  if (authError || !authData.user) {
+    return NextResponse.json({ error: getReadableSupabaseError(authError) }, { status: 400 });
+  }
+
   const { data, error } = await supabase
     .from("users")
-    .insert({
-      id: payload.id ?? randomUUID(),
-      auth_user_id: payload.auth_user_id,
-      name: payload.name,
-      phone: payload.phone,
-      role: payload.role,
-      permissions: payload.permissions,
-      active: payload.active,
-      stage: payload.stage,
-      grade: payload.grade,
-      track: payload.track,
-      school_name: payload.school_name,
-      parent_phone: payload.parent_phone,
-      subjects: payload.subjects,
-      student_code: payload.student_code,
-      extra: payload.extra,
-    })
-    .select("*")
+    .insert(buildProfileRow(payload, authData.user.id))
+    .select("id, auth_user_id, name, phone, role, permissions, active, stage, grade, track, school_name, parent_phone, subjects, student_code, extra")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    await supabase.auth.admin.deleteUser(authData.user.id);
+    return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
+  }
+
   return NextResponse.json({ user: data });
 }
 
@@ -113,30 +163,76 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "بيانات المستخدم غير مكتملة" }, { status: 400 });
   }
 
-  const supabase = createRouteSupabaseClient(await cookies());
+  if (payload.role === "student" && payload.parent_phone && payload.parent_phone === payload.phone) {
+    return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
+  }
+
+  const supabase = createServiceSupabaseClient();
+  const { data: existing, error: existingError } = await supabase
+    .from("users")
+    .select("id, auth_user_id, phone")
+    .eq("id", payload.id)
+    .maybeSingle();
+
+  if (existingError) {
+    return NextResponse.json({ error: existingError.message }, { status: 400 });
+  }
+
+  if (!existing) {
+    return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
+  }
+
+  const authUserId = existing.auth_user_id ?? existing.id;
+  const shouldSyncAuthPhone = typeof existing.phone === "string" && existing.phone !== payload.phone;
+
+  if (shouldSyncAuthPhone) {
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(authUserId, {
+      phone: payload.phone,
+      phone_confirm: true,
+      user_metadata: {
+        name: payload.name,
+        role: payload.role,
+        stage: payload.stage ?? null,
+        grade: payload.grade ?? null,
+        track: payload.track ?? null,
+        school_name: payload.school_name ?? null,
+        parent_phone: payload.parent_phone ?? null,
+        subjects: payload.subjects,
+        student_code: payload.student_code ?? null,
+      },
+    });
+
+    if (authUpdateError) {
+      return NextResponse.json({ error: getReadableSupabaseError(authUpdateError) }, { status: 400 });
+    }
+  }
+
   const { data, error } = await supabase
     .from("users")
     .update({
-      auth_user_id: payload.auth_user_id,
+      auth_user_id: authUserId,
       name: payload.name,
       phone: payload.phone,
       role: payload.role,
       permissions: payload.permissions,
       active: payload.active,
-      stage: payload.stage,
-      grade: payload.grade,
-      track: payload.track,
-      school_name: payload.school_name,
-      parent_phone: payload.parent_phone,
+      stage: payload.stage ?? null,
+      grade: payload.grade ?? null,
+      track: payload.track ?? null,
+      school_name: payload.school_name ?? null,
+      parent_phone: payload.parent_phone ?? null,
       subjects: payload.subjects,
-      student_code: payload.student_code,
+      student_code: payload.student_code ?? null,
       extra: payload.extra,
     })
     .eq("id", payload.id)
-    .select("*")
+    .select("id, auth_user_id, name, phone, role, permissions, active, stage, grade, track, school_name, parent_phone, subjects, student_code, extra")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
+  }
+
   return NextResponse.json({ user: data });
 }
 
@@ -145,11 +241,31 @@ export async function DELETE(request: Request) {
   if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
   const body = (await request.json()) as { id?: string };
-  if (!body.id) return NextResponse.json({ error: "معرّف المستخدم مطلوب" }, { status: 400 });
+  if (!body.id) return NextResponse.json({ error: "معرف المستخدم مطلوب" }, { status: 400 });
 
-  const supabase = createRouteSupabaseClient(await cookies());
+  const supabase = createServiceSupabaseClient();
+  const { data: existing, error: existingError } = await supabase
+    .from("users")
+    .select("id, auth_user_id")
+    .eq("id", body.id)
+    .maybeSingle();
+
+  if (existingError) {
+    return NextResponse.json({ error: existingError.message }, { status: 400 });
+  }
+
+  if (!existing) {
+    return NextResponse.json({ error: "المستخدم غير موجود" }, { status: 404 });
+  }
+
   const { error } = await supabase.from("users").delete().eq("id", body.id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
+
+  const authUserId = existing.auth_user_id ?? existing.id;
+  const { error: authDeleteError } = await supabase.auth.admin.deleteUser(authUserId);
+  if (authDeleteError) {
+    console.warn("Failed to delete linked auth user", authUserId, authDeleteError);
+  }
 
   return NextResponse.json({ ok: true });
 }

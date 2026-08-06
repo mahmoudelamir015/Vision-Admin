@@ -167,7 +167,10 @@ export default function UsersPage() {
       }
     } catch (error) {
       console.error("Failed to save student", error);
-      setFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء الحفظ." });
+      setFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء الحفظ.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -192,7 +195,10 @@ export default function UsersPage() {
       setFeedback({ type: "success", message: "تم حذف الطالب بنجاح." });
     } catch (error) {
       console.error("Failed to delete student", error);
-      setFeedback({ type: "error", message: "حدث خطأ غير متوقع أثناء حذف الطالب." });
+      setFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء حذف الطالب.",
+      });
     } finally {
       setMemberActionLoading(null);
     }
