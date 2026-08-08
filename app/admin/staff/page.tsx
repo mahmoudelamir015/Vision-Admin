@@ -242,7 +242,7 @@ export default function StaffPage() {
     setSelectedStaffId(member.id ?? null);
     setName(member.name);
     setPhone(member.phone);
-    setPermissions(member.permissions ?? ["attendance"]);
+    setPermissions((member.permissions ?? ["attendance"]) as StaffPermission[]);
     setPassword("");
     setStaffFormFeedback(null);
   };
