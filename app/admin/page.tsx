@@ -7,6 +7,7 @@ import {
   Banknote,
   CircleDashed,
   CreditCard,
+  GraduationCap,
   Loader2,
   Plus,
   QrCode,
@@ -31,7 +32,7 @@ import {
 import { deleteUser, fetchUsers, saveUser, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type SystemSwitchKey = "wallet" | "registration" | "results";
-type StaffPermission = "attendance" | "wallet" | "operations";
+type StaffPermission = "attendance" | "wallet" | "operations" | "manage_teachers";
 
 const switchMeta: Array<{
   key: SystemSwitchKey;
@@ -58,8 +59,15 @@ const switchMeta: Array<{
 const quickActions = [
   { title: "غرفة الحضور", href: "/admin/attendance", icon: QrCode },
   { title: "المحفظة", href: "/admin/wallet", icon: Wallet },
+  { title: "إدارة المدرسين", href: "/admin/teachers", icon: GraduationCap },
   { title: "إدارة الموظفين", href: "/admin/staff", icon: Users },
   { title: "الخزنة", href: "/admin/vault", icon: Banknote },
+];
+
+const editDataActions = [
+  { title: "تعديل بيانات الطلاب", href: "/admin/users" },
+  { title: "تعديل بيانات المعلمين", href: "/admin/teachers" },
+  { title: "تعديل بيانات الموظفين", href: "/admin/staff" },
 ];
 
 const defaultSwitches: Record<SystemSwitchKey, boolean> = {
@@ -77,6 +85,7 @@ export default function AdminControlRoomPage() {
   const [staff, setStaff] = useState<AppUserRecord[]>([]);
   const [staffName, setStaffName] = useState("");
   const [staffPhone, setStaffPhone] = useState("");
+  const [staffPassword, setStaffPassword] = useState("");
   const [staffPermission, setStaffPermission] = useState<StaffPermission>("attendance");
   const [staffFormFeedback, setStaffFormFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isStaffSaving, setIsStaffSaving] = useState(false);
@@ -217,6 +226,7 @@ export default function AdminControlRoomPage() {
         role: "staff",
         permissions: [staffPermission],
         active: true,
+        password: staffPassword.trim() || undefined,
       });
 
       if (!saved) {
@@ -227,6 +237,7 @@ export default function AdminControlRoomPage() {
       setStaff((current) => [saved, ...current.filter((item) => item.phone !== saved.phone)]);
       setStaffName("");
       setStaffPhone("");
+      setStaffPassword("");
       setStaffPermission("attendance");
       setStaffFormFeedback({ type: "success", message: "تم إضافة الموظف بنجاح." });
     } catch (error) {
@@ -437,7 +448,7 @@ export default function AdminControlRoomPage() {
               </div>
             </div>
 
-            <form onSubmit={addStaffMember} className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto]">
+            <form onSubmit={addStaffMember} className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_1fr_auto]">
               <input
                 value={staffName}
                 onChange={(event) => setStaffName(event.target.value)}
@@ -451,6 +462,13 @@ export default function AdminControlRoomPage() {
                 dir="ltr"
                 className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
+              <input
+                value={staffPassword}
+                onChange={(event) => setStaffPassword(event.target.value)}
+                placeholder="كلمة مرور اختيارية"
+                type="password"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
               <select
                 value={staffPermission}
                 onChange={(event) => setStaffPermission(event.target.value as StaffPermission)}
@@ -459,6 +477,7 @@ export default function AdminControlRoomPage() {
                 <option value="attendance">الحضور</option>
                 <option value="wallet">المحفظة</option>
                 <option value="operations">العمليات</option>
+                <option value="manage_teachers">إدارة المدرسين</option>
               </select>
               <button
                 type="submit"

@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { CircleDashed, Plus, ShieldAlert, Trash2, Users, Wallet, CalendarRange, Eye } from "lucide-react";
+import { CircleDashed, GraduationCap, Plus, ShieldAlert, Trash2, Users, Wallet, CalendarRange, Eye, Key, Edit3 } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
 import { deleteUser, fetchUsers, saveUser, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 import { requestAdminPasswordReset } from "@/src/lib/supabase/auth";
 
-type StaffPermission = "attendance" | "wallet" | "operations" | "content" | "notifications";
+type StaffPermission = "attendance" | "wallet" | "operations" | "content" | "notifications" | "manage_teachers";
 
 const permissionLabels: Record<StaffPermission, string> = {
   attendance: "الحضور",
@@ -16,6 +16,7 @@ const permissionLabels: Record<StaffPermission, string> = {
   operations: "العمليات",
   content: "المحتوى",
   notifications: "الإشعارات",
+  manage_teachers: "إدارة المدرسين",
 };
 
 const permissionIcons: Record<StaffPermission, typeof CalendarRange> = {
@@ -24,9 +25,10 @@ const permissionIcons: Record<StaffPermission, typeof CalendarRange> = {
   operations: Users,
   content: Users,
   notifications: Users,
+  manage_teachers: GraduationCap,
 };
 
-const allPermissions: StaffPermission[] = ["attendance", "wallet", "operations", "content", "notifications"];
+const allPermissions: StaffPermission[] = ["attendance", "wallet", "operations", "content", "notifications", "manage_teachers"];
 
 export default function StaffPage() {
   const { user } = useAuth();
@@ -35,7 +37,9 @@ export default function StaffPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [permissions, setPermissions] = useState<StaffPermission[]>(["attendance"]);
+  const [password, setPassword] = useState("");
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [staffFormFeedback, setStaffFormFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
@@ -155,24 +159,34 @@ export default function StaffPage() {
     setIsSaving(true);
     try {
       const saved = await saveUser({
+        id: editingStaffId ?? undefined,
         name: name.trim(),
         phone: phone.trim(),
         role: "staff",
         permissions,
         active: true,
+        password: password.trim() || undefined,
       });
 
       if (!saved) {
-        setStaffFormFeedback({ type: "error", message: "حدث خطأ أثناء حفظ الموظف. رجاءً حاول مرة أخرى." });
+        setStaffFormFeedback({ type: "error", message: editingStaffId ? "حدث خطأ أثناء تحديث الموظف. رجاءً حاول مرة أخرى." : "حدث خطأ أثناء حفظ الموظف. رجاءً حاول مرة أخرى." });
         return;
       }
 
-      setStaff((current) => [saved, ...current.filter((item) => item.phone !== saved.phone)]);
+      setStaff((current) => {
+        if (editingStaffId) {
+          return current.map((item) => (item.id === saved.id ? saved : item));
+        }
+        return [saved, ...current.filter((item) => item.phone !== saved.phone)];
+      });
+
       setSelectedStaffId(saved.id ?? null);
+      setEditingStaffId(null);
       setName("");
       setPhone("");
       setPermissions(["attendance"]);
-      setStaffFormFeedback({ type: "success", message: "تم إضافة الموظف بنجاح." });
+      setPassword("");
+      setStaffFormFeedback({ type: "success", message: editingStaffId ? "تم تحديث بيانات الموظف بنجاح." : "تم إضافة الموظف بنجاح." });
     } catch (error) {
       console.error("Failed to add staff", error);
       setStaffFormFeedback({
@@ -218,6 +232,56 @@ export default function StaffPage() {
         type: "error",
         message: error instanceof Error ? error.message : "حدث خطأ غير متوقع أثناء تحديث بيانات الموظف.",
       });
+    } finally {
+      setMemberActionLoading(null);
+    }
+  };
+
+  const startEditStaff = (member: AppUserRecord) => {
+    setEditingStaffId(member.id ?? null);
+    setSelectedStaffId(member.id ?? null);
+    setName(member.name);
+    setPhone(member.phone);
+    setPermissions(member.permissions ?? ["attendance"]);
+    setPassword("");
+    setStaffFormFeedback(null);
+  };
+
+  const cancelStaffEdit = () => {
+    setEditingStaffId(null);
+    setName("");
+    setPhone("");
+    setPermissions(["attendance"]);
+    setPassword("");
+    setStaffFormFeedback(null);
+  };
+
+  const handleChangePasswordStaff = async (member: AppUserRecord) => {
+    if (!member.id) return;
+    const newPassword = window.prompt("اكتب كلمة المرور الجديدة للموظف (8 أحرف على الأقل):");
+    if (!newPassword || newPassword.trim().length < 8) {
+      return;
+    }
+
+    setMemberActionLoading(member.id);
+    setStaffFormFeedback(null);
+
+    try {
+      const saved = await saveUser({
+        ...member,
+        password: newPassword.trim(),
+      });
+
+      if (!saved) {
+        setStaffFormFeedback({ type: "error", message: "تعذر تغيير كلمة المرور. حاول مرة أخرى." });
+        return;
+      }
+
+      setStaff((current) => current.map((item) => (item.id === member.id ? saved : item)));
+      setStaffFormFeedback({ type: "success", message: "تم تغيير كلمة المرور بنجاح." });
+    } catch (error) {
+      console.error("Failed to change staff password", error);
+      setStaffFormFeedback({ type: "error", message: error instanceof Error ? error.message : "حدث خطأ غير متوقع." });
     } finally {
       setMemberActionLoading(null);
     }
@@ -275,7 +339,7 @@ export default function StaffPage() {
       </motion.div>
 
       <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <form onSubmit={addStaff} className="grid gap-3 lg:grid-cols-[1.2fr_1fr_auto]">
+        <form onSubmit={addStaff} className="grid gap-3 lg:grid-cols-[1.2fr_1fr_0.9fr_auto]">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -287,6 +351,13 @@ export default function StaffPage() {
             onChange={(event) => setPhone(event.target.value)}
             placeholder="010XXXXXXXX"
             dir="ltr"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+          />
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="كلمة مرور اختيارية"
+            type="password"
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <button
@@ -454,6 +525,32 @@ export default function StaffPage() {
                     </td>
                     <td className="px-4 py-4 text-left">
                       <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEditStaff(member)}
+                          disabled={memberActionLoading === member.id}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-slate-600 transition-colors ${
+                            memberActionLoading === member.id
+                              ? "border-slate-200 bg-slate-100 cursor-wait opacity-70"
+                              : "border-slate-200 bg-slate-50 hover:border-[#D4AF37] hover:text-[#0A2540]"
+                          }`}
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          تعديل البيانات
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleChangePasswordStaff(member)}
+                          disabled={memberActionLoading === member.id}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-[#0A2540] transition-colors ${
+                            memberActionLoading === member.id
+                              ? "border-slate-200 bg-slate-100 cursor-wait opacity-70"
+                              : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Key className="h-4 w-4" />
+                          تغيير باسورد
+                        </button>
                         <button
                           type="button"
                           onClick={() => void handleRequestPasswordReset(member)}

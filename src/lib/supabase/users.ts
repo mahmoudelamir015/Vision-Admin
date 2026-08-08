@@ -18,7 +18,9 @@ export type AppUserRecord = {
   parent_phone?: string;
   subjects?: string[];
   student_code?: string;
+  profile_image?: string;
   extra?: Record<string, unknown>;
+  password?: string;
 };
 
 const readExtra = (record: SupabaseRecord | null): Record<string, unknown> => {
@@ -69,6 +71,7 @@ const normalizeUser = (record: SupabaseRecord | null): AppUserRecord | null => {
       ? record.subjects.filter((item): item is string => typeof item === "string")
       : undefined,
     student_code: typeof record.student_code === "string" ? record.student_code : undefined,
+    profile_image: typeof extra.profile_image === "string" ? extra.profile_image : undefined,
     extra: Object.keys(extra).length > 0 ? extra : undefined,
   };
 };
@@ -155,6 +158,14 @@ const buildPayload = (user: AppUserRecord) => {
 
   if (typeof user.active === "boolean") {
     payload.active = user.active;
+  }
+
+  if (typeof user.password === "string" && user.password.length > 0) {
+    payload.password = user.password;
+  }
+
+  if (typeof user.profile_image === "string" && user.profile_image.length > 0) {
+    payload.extra.profile_image = user.profile_image;
   }
 
   return payload;

@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Edit3, Plus, Search, ShieldAlert, Trash2, Users } from "lucide-react";
+import { Edit3, Key, Plus, Search, ShieldAlert, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
-import { deleteUser, fetchUsers, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
+import { deleteUser, fetchUsers, saveUser, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type StudentStage = "primary" | "prep" | "secondary";
 type SecondaryTrack = "" | "arts" | "science" | "math";
@@ -54,6 +54,7 @@ export default function UsersPage() {
   const [form, setForm] = useState<StudentForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [password, setPassword] = useState("");
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -109,6 +110,7 @@ export default function UsersPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setPassword("");
     setFeedback(null);
   };
 
@@ -146,8 +148,9 @@ export default function UsersPage() {
         track: form.stage === "secondary" ? form.track : "",
         student_code: currentStudent?.student_code ?? `VIS-${String(nextCode).padStart(4, "0")}`,
       };
-
-      if (!editingId) {
+      if (password.trim().length >= 8) {
+        payloadBody.password = password.trim();
+      } else if (!editingId) {
         payloadBody.password = phoneDigits.length >= 8 ? phoneDigits : `${phoneDigits}123456`;
       }
 
@@ -224,6 +227,31 @@ export default function UsersPage() {
     }
   };
 
+  const handleChangePasswordStudent = async (student: AppUserRecord) => {
+    if (!student.id) return;
+    const newPassword = window.prompt("اكتب كلمة المرور الجديدة للطالب (8 أحرف على الأقل):");
+    if (!newPassword || newPassword.trim().length < 8) return;
+
+    setMemberActionLoading(student.id);
+    setFeedback(null);
+
+    try {
+      const saved = await saveUser({ ...student, password: newPassword.trim() });
+      if (!saved) {
+        setFeedback({ type: "error", message: "تعذر تغيير كلمة المرور. حاول مرة أخرى." });
+        return;
+      }
+
+      setStudents((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+      setFeedback({ type: "success", message: "تم تغيير كلمة المرور بنجاح." });
+    } catch (error) {
+      console.error("Failed to change student password", error);
+      setFeedback({ type: "error", message: error instanceof Error ? error.message : "حدث خطأ غير متوقع." });
+    } finally {
+      setMemberActionLoading(null);
+    }
+  };
+
   const startEdit = (student: AppUserRecord) => {
     setEditingId(student.id ?? null);
     setSelectedStudentId(student.id ?? null);
@@ -234,6 +262,7 @@ export default function UsersPage() {
       grade: student.grade ?? "",
       track: (student.track as SecondaryTrack) || "",
     });
+    setPassword("");
   };
 
   return (
@@ -301,6 +330,13 @@ export default function UsersPage() {
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+          />
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="كلمة مرور اختيارية"
+            type="password"
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <select
@@ -447,7 +483,18 @@ export default function UsersPage() {
                           }`}
                         >
                           <Edit3 className="h-4 w-4" />
-                          تعديل
+                          تعديل البيانات
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleChangePasswordStudent(student)}
+                          disabled={memberActionLoading === student.id}
+                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-[#0A2540] transition-colors ${
+                            memberActionLoading === student.id ? "border-slate-200 bg-slate-100 cursor-wait opacity-70" : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                          }`}
+                        >
+                          <Key className="h-4 w-4" />
+                          تغيير باسورد
                         </button>
                         <button
                           type="button"

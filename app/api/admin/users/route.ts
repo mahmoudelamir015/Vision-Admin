@@ -20,6 +20,8 @@ type UserBody = {
   parent_phone?: string | null;
   subjects?: unknown;
   student_code?: string | null;
+  profile_image?: string | null;
+  photo_name?: string | null;
   extra?: unknown;
   password?: string | null;
 };
@@ -67,6 +69,7 @@ function normalizePayload(body: UserBody) {
     parent_phone: parentPhone ?? undefined,
     subjects: Array.isArray(body.subjects) ? body.subjects.filter((item): item is string => typeof item === "string") : [],
     student_code: typeof body.student_code === "string" ? body.student_code : undefined,
+    profile_image: typeof body.profile_image === "string" ? body.profile_image : undefined,
     extra: body.extra && typeof body.extra === "object" ? (body.extra as Record<string, unknown>) : {},
     password: resolvedPassword,
   };
@@ -74,10 +77,15 @@ function normalizePayload(body: UserBody) {
 
 function makeAuthEmail(phone: string) {
   const digits = phone.replace(/\D/g, "");
-  return `${digits}@vision.local`;
+  return `${digits}@vision-center.com`;
 }
 
 function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserId: string) {
+  const extra = {
+    ...(payload.extra ?? {}),
+    ...(typeof payload.profile_image === "string" && payload.profile_image ? { profile_image: payload.profile_image } : {}),
+  };
+
   return {
     id: authUserId,
     auth_user_id: authUserId,
@@ -94,7 +102,7 @@ function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserI
     parent_phone: payload.parent_phone ?? null,
     subjects: payload.subjects,
     student_code: payload.student_code ?? null,
-    extra: payload.extra,
+    extra,
   };
 }
 
@@ -144,6 +152,7 @@ export async function POST(request: Request) {
         phone_confirm: true,
         user_metadata: {
           name: payload.name,
+          full_name: payload.name,
           role: payload.role,
           stage: payload.stage ?? null,
           grade: payload.grade ?? null,
@@ -152,6 +161,7 @@ export async function POST(request: Request) {
           parent_phone: payload.parent_phone ?? null,
           subjects: payload.subjects,
           student_code: payload.student_code ?? null,
+          profile_image: payload.profile_image ?? null,
           auth_email: authEmail,
         },
       };
@@ -171,6 +181,7 @@ export async function POST(request: Request) {
         options: {
           data: {
             name: payload.name,
+            full_name: payload.name,
             role: payload.role,
             phone: payload.phone,
             auth_email: authEmail,
@@ -266,6 +277,37 @@ export async function PATCH(request: Request) {
     }
   }
 
+  const authUpdateAttributes: Record<string, unknown> = {
+    name: payload.name,
+    full_name: payload.name,
+    role: payload.role,
+    stage: payload.stage ?? null,
+    grade: payload.grade ?? null,
+    track: payload.track ?? null,
+    school_name: payload.school_name ?? null,
+    parent_phone: payload.parent_phone ?? null,
+    subjects: payload.subjects,
+    student_code: payload.student_code ?? null,
+    profile_image: payload.profile_image ?? null,
+  };
+
+  const authUpdateOptions: Parameters<typeof supabase.auth.admin.updateUserById>[1] = {
+    phone: payload.phone,
+    phone_confirm: true,
+    user_metadata: authUpdateAttributes,
+  };
+
+  if (payload.password && payload.password.length >= 8) {
+    authUpdateOptions.password = payload.password;
+  }
+
+  if (shouldSyncAuthPhone || typeof authUpdateOptions.password === "string") {
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(authUserId, authUpdateOptions);
+    if (authUpdateError) {
+      return NextResponse.json({ error: getReadableSupabaseError(authUpdateError) }, { status: 400 });
+    }
+  }
+
   const { data, error } = await supabase
     .from("users")
     .update({
@@ -283,7 +325,10 @@ export async function PATCH(request: Request) {
       parent_phone: payload.parent_phone ?? null,
       subjects: payload.subjects,
       student_code: payload.student_code ?? null,
-      extra: payload.extra,
+      extra: {
+        ...(payload.extra ?? {}),
+        ...(typeof payload.profile_image === "string" && payload.profile_image ? { profile_image: payload.profile_image } : {}),
+      },
     })
     .eq("id", payload.id)
     .select("id, auth_user_id, name, phone, role, permissions, active, stage, grade, track, school_name, parent_phone, subjects, student_code, extra")

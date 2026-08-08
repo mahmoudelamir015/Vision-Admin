@@ -1,0 +1,25 @@
+
+> vision-center-admin@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.19
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 6.0s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/admin/staff/page.tsx:245:20
+Type error: Argument of type 'string[]' is not assignable to parameter of type 'SetStateAction<StaffPermission[]>'.
+  Type 'string[]' is not assignable to type 'StaffPermission[]'.
+    Type 'string' is not assignable to type 'StaffPermission'.
+
+[0m [90m 243 |[39m     setName(member[33m.[39mname)[33m;[39m
+ [90m 244 |[39m     setPhone(member[33m.[39mphone)[33m;[39m
+[31m[1m>[22m[39m[90m 245 |[39m     setPermissions(member[33m.[39mpermissions [33m?[39m[33m?[39m [[32m"attendance"[39m])[33m;[39m
+ [90m     |[39m                    [31m[1m^[22m[39m
+ [90m 246 |[39m     setPassword([32m""[39m)[33m;[39m
+ [90m 247 |[39m     setStaffFormFeedback([36mnull[39m)[33m;[39m
+ [90m 248 |[39m   }[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null

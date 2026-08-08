@@ -9,14 +9,33 @@ export async function POST(request: Request) {
     const profile = await getCurrentAdminProfile();
     if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
-    const body = (await request.json().catch(() => null)) as { student_phone?: string; valid_for_minutes?: number } | null;
+    const body = (await request.json().catch(() => null)) as { shared?: boolean; student_phone?: string; valid_for_seconds?: number } | null;
+    const supabase = createRouteSupabaseClient(await cookies());
+
+    if (body?.shared) {
+      const { data, error } = await supabase.rpc("issue_shared_attendance_token", {
+        p_valid_for_seconds: body.valid_for_seconds ?? 60,
+      });
+
+      if (error) {
+        const message = error?.message || "تعذر توليد رمز الحضور";
+        return NextResponse.json({ error: message }, { status: 400 });
+      }
+
+      const tokenRow = Array.isArray(data) ? data[0] : data;
+      if (!tokenRow) {
+        return NextResponse.json({ error: "تعذر توليد رمز الحضور" }, { status: 400 });
+      }
+
+      return NextResponse.json({ token: tokenRow });
+    }
+
     const studentPhone = normalizeEgyptianPhone(body?.student_phone ?? "");
     if (!studentPhone) return NextResponse.json({ error: "رقم الطالب غير صالح" }, { status: 400 });
 
-    const supabase = createRouteSupabaseClient(await cookies());
     const { data, error } = await supabase.rpc("issue_attendance_token", {
       p_student_phone: studentPhone,
-      p_valid_for_minutes: body?.valid_for_minutes ?? 10,
+      p_valid_for_minutes: Math.max(1, Math.min(Math.ceil((body?.valid_for_seconds ?? 600) / 60), 60)),
     });
 
     if (error) {
