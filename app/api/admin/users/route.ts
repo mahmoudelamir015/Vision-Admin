@@ -82,6 +82,7 @@ function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserI
     id: authUserId,
     auth_user_id: authUserId,
     name: payload.name,
+    full_name: payload.name,
     phone: payload.phone,
     role: payload.role,
     permissions: payload.permissions,
@@ -270,6 +271,7 @@ export async function PATCH(request: Request) {
     .update({
       auth_user_id: authUserId,
       name: payload.name,
+      full_name: payload.name,
       phone: payload.phone,
       role: payload.role,
       permissions: payload.permissions,
