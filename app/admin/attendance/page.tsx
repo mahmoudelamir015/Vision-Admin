@@ -29,7 +29,11 @@ const fetchJson = async <T,>(input: RequestInfo | URL, init?: RequestInit): Prom
     },
   });
 
-  if (!response.ok) return null;
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? "حدث خطأ غير متوقع");
+  }
+
   return (await response.json()) as T;
 };
 
@@ -53,15 +57,23 @@ export default function AttendancePage() {
   );
 
   const loadRecords = async () => {
-    const payload = await fetchJson<{ records?: AttendanceRecord[] }>("/api/admin/attendance");
-    if (payload?.records) setRecords(payload.records);
+    try {
+      const payload = await fetchJson<{ records?: AttendanceRecord[] }>('/api/admin/attendance');
+      if (payload?.records) setRecords(payload.records);
+    } catch (error) {
+      console.error("Failed to load attendance records", error);
+    }
   };
 
   const loadStudents = async () => {
-    const payload = await fetchJson<{ students?: ApiStudent[] }>("/api/admin/students");
-    const nextStudents = payload?.students ?? [];
-    setStudents(nextStudents);
-    setSelectedPhone((current) => current || nextStudents[0]?.phone || "");
+    try {
+      const payload = await fetchJson<{ students?: ApiStudent[] }>('/api/admin/students');
+      const nextStudents = payload?.students ?? [];
+      setStudents(nextStudents);
+      setSelectedPhone((current) => current || nextStudents[0]?.phone || "");
+    } catch (error) {
+      console.error("Failed to load students", error);
+    }
   };
 
   useEffect(() => {
@@ -148,8 +160,8 @@ export default function AttendancePage() {
       setPinCode(tokenData.pin_code);
       setExpiresAt(tokenData.expires_at ?? null);
       setActiveTab("BARCODE");
-    } catch {
-      setMessage("حصل خطأ أثناء توليد التوكن");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "حصل خطأ أثناء توليد التوكن");
     } finally {
       setIsLoading(false);
     }

@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { Edit3, Plus, Search, ShieldAlert, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
-import { deleteUser, fetchUsers, saveUser, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
+import { deleteUser, fetchUsers, subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type StudentStage = "primary" | "prep" | "secondary";
 type SecondaryTrack = "" | "arts" | "science" | "math";
@@ -135,7 +135,8 @@ export default function UsersPage() {
     setIsSaving(true);
     try {
       const currentStudent = editingId ? students.find((student) => student.id === editingId) ?? null : null;
-      const saved = await saveUser({
+      const phoneDigits = form.phone.trim().replace(/\D/g, "");
+      const payloadBody: Record<string, unknown> = {
         id: currentStudent?.id,
         name: form.name.trim(),
         phone: form.phone.trim(),
@@ -144,27 +145,46 @@ export default function UsersPage() {
         grade: form.grade,
         track: form.stage === "secondary" ? form.track : "",
         student_code: currentStudent?.student_code ?? `VIS-${String(nextCode).padStart(4, "0")}`,
-        active: true,
+      };
+
+      if (!editingId) {
+        payloadBody.password = phoneDigits.length >= 8 ? phoneDigits : `${phoneDigits}123456`;
+      }
+
+      const response = await fetch("/api/admin/users", {
+        method: editingId ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payloadBody),
       });
 
-      if (saved) {
-        setStudents((current) => {
-          if (editingId) {
-            return current.map((item) => (item.id === saved.id ? saved : item));
-          }
-          return [saved, ...current.filter((item) => item.id !== saved.id)];
+      const payload = (await response.json().catch(() => null)) as { user?: AppUserRecord; error?: string } | null;
+      const saved = payload?.user ?? null;
+
+      if (!response.ok || !saved) {
+        setFeedback({
+          type: "error",
+          message: payload?.error ?? "تعذر حفظ الطالب. تأكد من صحة البيانات والمحاولة مرة أخرى.",
         });
-
-        if (!editingId) {
-          setNextCode((current) => current + 1);
-        }
-
-        setSelectedStudentId(saved.id ?? null);
-        setFeedback({ type: "success", message: editingId ? "تم حفظ الطالب بنجاح" : "تم إضافة الطالب بنجاح" });
-        resetForm();
-      } else {
-        setFeedback({ type: "error", message: "تعذر حفظ الطالب. تأكد من صحة البيانات والمحاولة مرة أخرى." });
+        return;
       }
+
+      setStudents((current) => {
+        if (editingId) {
+          return current.map((item) => (item.id === saved.id ? saved : item));
+        }
+        return [saved, ...current.filter((item) => item.id !== saved.id)];
+      });
+
+      if (!editingId) {
+        setNextCode((current) => current + 1);
+      }
+
+      setSelectedStudentId(saved.id ?? null);
+      setFeedback({ type: "success", message: editingId ? "تم حفظ الطالب بنجاح" : "تم إضافة الطالب بنجاح" });
+      resetForm();
     } catch (error) {
       console.error("Failed to save student", error);
       setFeedback({

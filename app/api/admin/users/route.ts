@@ -35,15 +35,29 @@ function getReadableSupabaseError(error: unknown) {
   return message || "حدث خطأ غير متوقع";
 }
 
+function buildDefaultPassword(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  const fallback = digits.length >= 8 ? digits : `${digits}123456`;
+  return fallback.length >= 8 ? fallback : `${fallback}A1!`;
+}
+
 function normalizePayload(body: UserBody) {
   const phone = normalizeEgyptianPhone(body.phone ?? "");
   const parentPhone = body.parent_phone ? normalizeEgyptianPhone(body.parent_phone) : null;
+  const role = typeof body.role === "string" ? body.role : "";
+  const resolvedPassword =
+    typeof body.password === "string" && body.password.length >= 8
+      ? body.password
+      : role === "student" && phone
+        ? buildDefaultPassword(phone)
+        : undefined;
+
   return {
     id: typeof body.id === "string" ? body.id : undefined,
     auth_user_id: typeof body.auth_user_id === "string" ? body.auth_user_id : undefined,
     name: typeof body.name === "string" ? body.name.trim() : "",
     phone,
-    role: typeof body.role === "string" ? body.role : "",
+    role,
     permissions: Array.isArray(body.permissions) ? body.permissions.filter((item): item is string => typeof item === "string") : [],
     active: typeof body.active === "boolean" ? body.active : true,
     stage: typeof body.stage === "string" ? body.stage : undefined,
@@ -54,8 +68,13 @@ function normalizePayload(body: UserBody) {
     subjects: Array.isArray(body.subjects) ? body.subjects.filter((item): item is string => typeof item === "string") : [],
     student_code: typeof body.student_code === "string" ? body.student_code : undefined,
     extra: body.extra && typeof body.extra === "object" ? (body.extra as Record<string, unknown>) : {},
-    password: typeof body.password === "string" ? body.password : undefined,
+    password: resolvedPassword,
   };
+}
+
+function makeAuthEmail(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return `${digits}@vision.local`;
 }
 
 function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserId: string) {
@@ -100,57 +119,96 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const profile = await getCurrentAdminProfile();
-  if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
+  try {
+    const profile = await getCurrentAdminProfile();
+    if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
-  const body = (await request.json()) as UserBody;
-  const payload = normalizePayload(body);
-  if (!payload.name || !payload.phone || !payload.role) {
-    return NextResponse.json({ error: "بيانات المستخدم غير مكتملة" }, { status: 400 });
+    const body = (await request.json().catch(() => null)) as UserBody | null;
+    const payload = normalizePayload(body ?? {});
+    if (!payload.name || !payload.phone || !payload.role) {
+      return NextResponse.json({ error: "بيانات المستخدم غير مكتملة" }, { status: 400 });
+    }
+
+    if (payload.role === "student" && payload.parent_phone && payload.parent_phone === payload.phone) {
+      return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
+    }
+
+    const normalizedPhone = payload.phone ?? "";
+    const authEmail = makeAuthEmail(normalizedPhone);
+    const serviceSupabase = createServiceSupabaseClient();
+
+    const createWithServiceRole = async () => {
+      const authAttributes: Parameters<typeof serviceSupabase.auth.admin.createUser>[0] = {
+        phone: payload.phone ?? undefined,
+        phone_confirm: true,
+        user_metadata: {
+          name: payload.name,
+          role: payload.role,
+          stage: payload.stage ?? null,
+          grade: payload.grade ?? null,
+          track: payload.track ?? null,
+          school_name: payload.school_name ?? null,
+          parent_phone: payload.parent_phone ?? null,
+          subjects: payload.subjects,
+          student_code: payload.student_code ?? null,
+          auth_email: authEmail,
+        },
+      };
+
+      if (payload.password && payload.password.length >= 8) {
+        authAttributes.password = payload.password;
+      }
+
+      return serviceSupabase.auth.admin.createUser(authAttributes);
+    };
+
+    const createWithEmailSignup = async () => {
+      const password = payload.password && payload.password.length >= 8 ? payload.password : `${normalizedPhone.replace(/\D/g, "").slice(-4)}Aa!${String(Date.now()).slice(-4)}`;
+      return serviceSupabase.auth.signUp({
+        email: authEmail,
+        password,
+        options: {
+          data: {
+            name: payload.name,
+            role: payload.role,
+            phone: payload.phone,
+            auth_email: authEmail,
+            stage: payload.stage ?? null,
+            grade: payload.grade ?? null,
+            track: payload.track ?? null,
+            school_name: payload.school_name ?? null,
+            parent_phone: payload.parent_phone ?? null,
+            subjects: payload.subjects,
+            student_code: payload.student_code ?? null,
+          },
+        },
+      });
+    };
+
+    const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const authResult = hasServiceRole ? await createWithServiceRole() : await createWithEmailSignup();
+    const authData = authResult.data;
+    const authError = authResult.error;
+
+    if (authError || !authData.user) {
+      return NextResponse.json({ error: getReadableSupabaseError(authError) }, { status: 400 });
+    }
+
+    const { data, error } = await serviceSupabase
+      .from("users")
+      .insert(buildProfileRow(payload, authData.user.id))
+      .select("id, auth_user_id, name, phone, role, permissions, active, stage, grade, track, school_name, parent_phone, subjects, student_code, extra")
+      .single();
+
+    if (error) {
+      await serviceSupabase.auth.admin.deleteUser(authData.user.id);
+      return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
+    }
+
+    return NextResponse.json({ user: data });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "حدث خطأ غير متوقع" }, { status: 400 });
   }
-
-  if (payload.role === "student" && payload.parent_phone && payload.parent_phone === payload.phone) {
-    return NextResponse.json({ error: "رقم الطالب لازم يختلف عن رقم ولي الأمر" }, { status: 400 });
-  }
-
-  const supabase = createServiceSupabaseClient();
-  const authAttributes: Parameters<typeof supabase.auth.admin.createUser>[0] = {
-    phone: payload.phone,
-    phone_confirm: true,
-    user_metadata: {
-      name: payload.name,
-      role: payload.role,
-      stage: payload.stage ?? null,
-      grade: payload.grade ?? null,
-      track: payload.track ?? null,
-      school_name: payload.school_name ?? null,
-      parent_phone: payload.parent_phone ?? null,
-      subjects: payload.subjects,
-      student_code: payload.student_code ?? null,
-    },
-  };
-
-  if (payload.password && payload.password.length >= 8) {
-    authAttributes.password = payload.password;
-  }
-
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser(authAttributes);
-  if (authError || !authData.user) {
-    return NextResponse.json({ error: getReadableSupabaseError(authError) }, { status: 400 });
-  }
-
-  const { data, error } = await supabase
-    .from("users")
-    .insert(buildProfileRow(payload, authData.user.id))
-    .select("id, auth_user_id, name, phone, role, permissions, active, stage, grade, track, school_name, parent_phone, subjects, student_code, extra")
-    .single();
-
-  if (error) {
-    await supabase.auth.admin.deleteUser(authData.user.id);
-    return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
-  }
-
-  return NextResponse.json({ user: data });
 }
 
 export async function PATCH(request: Request) {

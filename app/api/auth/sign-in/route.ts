@@ -48,7 +48,10 @@ export async function POST(request: Request) {
     loginResult = await supabase.auth.signInWithPassword({ email: masterAdminEmail, password: masterAdminPassword });
   } else {
     const password = body.password ?? "";
-    const candidatePhones = [normalizedPhone, rawPhone].filter((value): value is string => Boolean(value));
+    const normalizedPhoneValue = normalizedPhone ?? "";
+    const phoneDigits = normalizedPhoneValue.replace(/\D/g, "");
+    const candidatePhones = [normalizedPhoneValue, rawPhone].filter((value): value is string => Boolean(value));
+    const candidateEmails = phoneDigits ? [`${phoneDigits}@vision.local`] : [];
 
     if (candidatePhones.length === 0 || password.length < 8) {
       return attachBufferedCookies(NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 }));
@@ -57,6 +60,13 @@ export async function POST(request: Request) {
     for (const candidatePhone of candidatePhones) {
       loginResult = await supabase.auth.signInWithPassword({ phone: candidatePhone, password });
       if (!loginResult.error) break;
+    }
+
+    if (loginResult?.error) {
+      for (const candidateEmail of candidateEmails) {
+        loginResult = await supabase.auth.signInWithPassword({ email: candidateEmail, password });
+        if (!loginResult.error) break;
+      }
     }
   }
 
