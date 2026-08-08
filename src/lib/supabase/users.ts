@@ -135,7 +135,7 @@ async function adminApiRequest<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 const buildPayload = (user: AppUserRecord) => {
-  const payload: Record<string, unknown> = {
+  const payload: Record<string, unknown> & { extra: Record<string, unknown> } = {
     auth_user_id: user.auth_user_id,
     name: user.name,
     phone: user.phone,
