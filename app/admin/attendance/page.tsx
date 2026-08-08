@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, CircleDashed, Download, QrCode, Clock, RefreshCcw, Users } from "lucide-react";
+import { Activity, CircleDashed, Download, QrCode, Clock, RefreshCcw, Search, Users } from "lucide-react";
 import QRCode from "react-qr-code";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
@@ -13,10 +13,9 @@ type AttendanceTokenResponse = {
   token?: string;
   pin_code?: string;
   expires_at?: string;
-  student_phone?: string;
 };
 
-type ApiStudent = Pick<AppUserRecord, "id" | "name" | "phone" | "stage" | "grade" | "track" | "student_code">;
+type ApiStudent = Pick<AppUserRecord, "id" | "name" | "phone" | "stage" | "grade" | "track" | "student_code" | "parent_phone">;
 
 const fetchJson = async <T,>(input: RequestInfo | URL, init?: RequestInit): Promise<T | null> => {
   const response = await fetch(input, {
@@ -40,25 +39,42 @@ const fetchJson = async <T,>(input: RequestInfo | URL, init?: RequestInit): Prom
 export default function AttendancePage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
-  const [activeTab, setActiveTab] = useState<"LIVE" | "BARCODE">("LIVE");
+  const [activeTab, setActiveTab] = useState<"LIVE" | "DYNAMIC">("LIVE");
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<ApiStudent[]>([]);
-  const [selectedPhone, setSelectedPhone] = useState("");
   const [qrValue, setQrValue] = useState("");
-  const [pinCode, setPinCode] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [pinCode, setPinCode] = useState<string | null>(null);
+  const [sessionDurationSeconds, setSessionDurationSeconds] = useState(60);
   const [message, setMessage] = useState<string | null>(null);
+  const [manualSearch, setManualSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const barcodeRef = useRef<HTMLDivElement | null>(null);
 
-  const selectedStudent = useMemo(
-    () => students.find((student) => student.phone === selectedPhone) ?? null,
-    [selectedPhone, students],
-  );
+  const filteredManualSearchResults = useMemo(() => {
+    const query = manualSearch.trim().toLowerCase();
+    if (!query) return [];
+    return students
+      .filter((student) => {
+        const haystack = [
+          student.name,
+          student.phone,
+          student.student_code ?? "",
+          student.grade ?? "",
+          student.track ?? "",
+          student.parent_phone ?? "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(query);
+      })
+      .slice(0, 12);
+  }, [manualSearch, students]);
 
   const loadRecords = async () => {
     try {
-      const payload = await fetchJson<{ records?: AttendanceRecord[] }>('/api/admin/attendance');
+      const payload = await fetchJson<{ records?: AttendanceRecord[] }>("/api/admin/attendance");
       if (payload?.records) setRecords(payload.records);
     } catch (error) {
       console.error("Failed to load attendance records", error);
@@ -67,10 +83,8 @@ export default function AttendancePage() {
 
   const loadStudents = async () => {
     try {
-      const payload = await fetchJson<{ students?: ApiStudent[] }>('/api/admin/students');
-      const nextStudents = payload?.students ?? [];
-      setStudents(nextStudents);
-      setSelectedPhone((current) => current || nextStudents[0]?.phone || "");
+      const payload = await fetchJson<{ students?: ApiStudent[] }>("/api/admin/students");
+      setStudents(payload?.students ?? []);
     } catch (error) {
       console.error("Failed to load students", error);
     }
@@ -137,31 +151,56 @@ export default function AttendancePage() {
   };
 
   const issueToken = async () => {
-    if (!selectedPhone) {
-      setMessage("اختار طالب الأول");
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      const payload = await fetchJson<{ token?: AttendanceTokenResponse }>("/api/admin/attendance-token", {
+        method: "POST",
+        body: JSON.stringify({ shared: true, valid_for_seconds: sessionDurationSeconds }),
+      });
+
+      const tokenData = payload?.token;
+      if (!tokenData?.token) {
+        setMessage("فشل توليد رمز الحضور");
+        return;
+      }
+
+      setQrValue(tokenData.token);
+      setExpiresAt(tokenData.expires_at ?? null);
+      setPinCode(tokenData.pin_code ?? null);
+      setMessage("تم توليد رمز QR بنجاح");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "حصل خطأ أثناء توليد التوكن");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const recordManualAttendance = async (student: ApiStudent) => {
+    if (!student.id) {
+      setMessage("تعذر تحديد الطالب لتسجيل الحضور");
       return;
     }
 
     setIsLoading(true);
     setMessage(null);
+
     try {
-      const payload = await fetchJson<{ token?: AttendanceTokenResponse }>("/api/admin/attendance-token", {
+      const payload = await fetchJson<{ success?: boolean; error?: string }>("/api/admin/manual-attendance", {
         method: "POST",
-        body: JSON.stringify({ student_phone: selectedPhone, valid_for_minutes: 10 }),
+        body: JSON.stringify({ student_id: student.id }),
       });
 
-      const tokenData = payload?.token;
-      if (!tokenData?.token || !tokenData.pin_code) {
-        setMessage("فشل توليد التوكن");
-        return;
+      if (!payload?.success) {
+        throw new Error(payload?.error ?? "تعذر تسجيل الحضور اليدوي");
       }
 
-      setQrValue(tokenData.token);
-      setPinCode(tokenData.pin_code);
-      setExpiresAt(tokenData.expires_at ?? null);
-      setActiveTab("BARCODE");
+      setMessage(`تم تسجيل حضور ${student.name} بنجاح`);
+      setManualSearch("");
+      await loadRecords();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "حصل خطأ أثناء توليد التوكن");
+      setMessage(error instanceof Error ? error.message : "تعذر تسجيل الحضور اليدوي");
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +222,7 @@ export default function AttendancePage() {
           </div>
           <div>
             <h1 className="text-2xl font-extrabold text-[#0A2540]">الحضور الذكي</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500">شاشة البث المباشر وتوليد QR token قصير العمر من قاعدة البيانات.</p>
+            <p className="mt-1 text-sm font-bold text-slate-500">شاشة البث المباشر وتوليد QR مباشر قصير العمر من قاعدة البيانات.</p>
           </div>
         </div>
 
@@ -200,12 +239,12 @@ export default function AttendancePage() {
           {isAdmin ? (
             <button
               type="button"
-              onClick={() => setActiveTab("BARCODE")}
+              onClick={() => setActiveTab("DYNAMIC")}
               className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
-                activeTab === "BARCODE" ? "bg-white text-[#0A2540] shadow-sm" : "text-slate-500 hover:text-slate-700"
+                activeTab === "DYNAMIC" ? "bg-white text-[#0A2540] shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              الباركود الثابت
+              QR مباشر
             </button>
           ) : null}
         </div>
@@ -281,43 +320,33 @@ export default function AttendancePage() {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#0A2540]/5 px-3 py-1 text-xs font-black uppercase tracking-[0.25em] text-[#0A2540]">
                 <QrCode className="h-4 w-4" />
-                ثابت للطباعة
+                رمز QR مباشر
               </div>
-              <h2 className="text-2xl font-extrabold text-[#0A2540]">باركود الحضور الثابت</h2>
+              <h2 className="text-2xl font-extrabold text-[#0A2540]">شاشة QR الديناميكي</h2>
               <p className="max-w-xl text-sm font-bold leading-7 text-slate-500">
-                اختار طالب، ولما تضغط توليد هنحفظ token قصير العمر في قاعدة البيانات ونطلع QR قابل للمسح مع pin منفصل.
+                أنشئ رمز حضور مباشر صالح لجميع الطلاب لفترة قصيرة. استخدم هذه الشاشة في السنتر أو أي جهاز عرض، وسيتم تسجيل الحضور فوراً عند المسح.
               </p>
 
               <div className="grid gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                 <label className="space-y-2 text-sm font-bold text-slate-700">
-                  الطالب
+                  مدة صلاحية رمز الـ QR
                   <select
-                    value={selectedPhone}
-                    onChange={(event) => setSelectedPhone(event.target.value)}
+                    value={sessionDurationSeconds}
+                    onChange={(event) => setSessionDurationSeconds(Number(event.target.value))}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none"
                   >
-                    <option value="">اختر طالب</option>
-                    {students.map((student) => (
-                      <option key={student.phone} value={student.phone}>
-                        {student.name} - {student.phone}
-                      </option>
-                    ))}
+                    <option value={60}>1 دقيقة</option>
+                    <option value={120}>2 دقائق</option>
+                    <option value={300}>5 دقائق</option>
+                    <option value={600}>10 دقائق</option>
                   </select>
                 </label>
-
-                {selectedStudent ? (
-                  <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-600">
-                    <div>الاسم: {selectedStudent.name}</div>
-                    <div className="mt-1">الهاتف: {selectedStudent.phone}</div>
-                    <div className="mt-1">الكود: {selectedStudent.student_code ?? "-"}</div>
-                  </div>
-                ) : null}
 
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={() => void issueToken()}
-                    disabled={isLoading || !selectedPhone}
+                    disabled={isLoading}
                     className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     <RefreshCcw className="h-4 w-4" />
@@ -334,6 +363,44 @@ export default function AttendancePage() {
                   </button>
                 </div>
 
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
+                  <label className="space-y-2 text-sm font-bold text-slate-700">
+                    تسجيل حضور يدوي سريع
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <input
+                        value={manualSearch}
+                        onChange={(event) => setManualSearch(event.target.value)}
+                        placeholder="ابحث بـ VIS أو الاسم أو الهاتف أو ولي الأمر"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-10 outline-none"
+                      />
+                    </div>
+                  </label>
+
+                  {filteredManualSearchResults.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {filteredManualSearchResults.map((student) => (
+                        <div key={student.id ?? student.phone} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                          <div>
+                            <div className="text-sm font-extrabold text-[#0A2540]">{student.name}</div>
+                            <div className="text-xs font-bold text-slate-500">{student.phone} • {student.student_code ?? "-"}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => void recordManualAttendance(student)}
+                            disabled={isLoading}
+                            className="rounded-xl bg-[#0A2540] px-3 py-2 text-sm font-bold text-white"
+                          >
+                            تسجيل حضور
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : manualSearch ? (
+                    <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm font-bold text-slate-500">لا توجد نتائج مطابقة.</div>
+                  ) : null}
+                </div>
+
                 {message ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{message}</div> : null}
               </div>
             </div>
@@ -346,7 +413,7 @@ export default function AttendancePage() {
 
               <div ref={barcodeRef} className="inline-flex rounded-[2rem] border border-slate-200 bg-white p-4 shadow-lg">
                 <div className="rounded-[1.5rem] border-4 border-[#0A2540] bg-white p-4">
-                  {qrValue ? <QRCode value={qrValue} size={260} fgColor="#0A2540" /> : <EmptyState icon={Users} title="اختار طالب الأول" description="بعدها هنطلع QR قصير العمر من قاعدة البيانات." />}
+                  {qrValue ? <QRCode value={qrValue} size={260} fgColor="#0A2540" /> : <EmptyState icon={Users} title="لم يتم توليد QR بعد" description="اضغط توليد QR جديد لإنشاء رمز صالح حالياً." />}
                 </div>
               </div>
 
@@ -354,7 +421,7 @@ export default function AttendancePage() {
                 <p className="text-sm font-bold text-slate-500">الـ PIN المختصر</p>
                 <p className="mt-3 text-5xl font-black tracking-[0.3em] text-[#0A2540]">{pinCode || "---"}</p>
                 <p className="mt-3 text-sm font-bold leading-7 text-slate-500">
-                  الطالب هيستخدم الـ QR ده مع رقم الهاتف والـ PIN القصير. {expiresAt ? `ينتهي في ${new Date(expiresAt).toLocaleString("ar-EG")}` : ""}
+                  استخدم هذا الرمز المباشر مع جهاز المسح. {expiresAt ? `ينتهي في ${new Date(expiresAt).toLocaleString("ar-EG")}` : ""}
                 </p>
               </div>
             </div>
