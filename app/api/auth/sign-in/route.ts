@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
+import { createServiceSupabaseClient } from "@/src/lib/supabase/admin";
 import { createRouteSupabaseClientWithBufferedCookies } from "@/src/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     normalizedPhone,
     hasAccessCode: Boolean(body.accessCode),
   });
+
   const isMasterAdminLogin = body.expectedRole === "master_admin";
   const cookieStore = await cookies();
   const { supabase, attachBufferedCookies } = createRouteSupabaseClientWithBufferedCookies(cookieStore);
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
     const password = body.password ?? "";
     const normalizedPhoneValue = normalizedPhone ?? "";
     const phoneDigits = normalizedPhoneValue.replace(/\D/g, "");
-    const candidatePhones = [normalizedPhoneValue, rawPhone].filter((value): value is string => Boolean(value));
+    const candidatePhones = Array.from(new Set([normalizedPhoneValue, rawPhone].filter((value): value is string => Boolean(value))));
     const candidateEmails = phoneDigits ? [`${phoneDigits}@vision.local`] : [];
 
     if (candidatePhones.length === 0 || password.length < 8) {
@@ -82,11 +84,36 @@ export async function POST(request: Request) {
     return attachBufferedCookies(NextResponse.json({ error: "رقم الهاتف أو كلمة المرور غير صحيحة" }, { status: 401 }));
   }
 
-  const { data: profile } = await supabase
+  const serviceSupabase = createServiceSupabaseClient();
+  const profileSelect = "id, auth_user_id, name, phone, role, permissions";
+
+  const { data: linkedProfile } = await serviceSupabase
     .from("users")
-    .select("id, name, phone, role, permissions")
+    .select(profileSelect)
     .eq("auth_user_id", data.user.id)
     .maybeSingle();
+
+  let profile = linkedProfile;
+
+  if (!profile || !["master_admin", "staff"].includes(profile.role)) {
+    const candidatePhones = Array.from(new Set([normalizedPhone, rawPhone].filter((value): value is string => Boolean(value))));
+
+    if (candidatePhones.length > 0) {
+      const { data: fallbackProfiles } = await serviceSupabase
+        .from("users")
+        .select(profileSelect)
+        .in("phone", candidatePhones)
+        .in("role", ["master_admin", "staff"]);
+
+      if (Array.isArray(fallbackProfiles) && fallbackProfiles.length > 0) {
+        profile = fallbackProfiles[0];
+
+        if (profile.id && profile.auth_user_id !== data.user.id) {
+          await serviceSupabase.from("users").update({ auth_user_id: data.user.id }).eq("id", profile.id);
+        }
+      }
+    }
+  }
 
   const normalizedMasterAdminEmail = (process.env.MASTER_ADMIN_EMAIL ?? "").trim().toLowerCase();
   const signedInEmail = data.user.email?.trim().toLowerCase() ?? "";
@@ -95,7 +122,7 @@ export async function POST(request: Request) {
   if (profile && (profile.role === "master_admin" || profile.role === "staff")) {
     if (body.expectedRole && profile.role !== body.expectedRole) {
       await supabase.auth.signOut();
-      return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 }));
+      return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مخصص لهذه الواجهة" }, { status: 403 }));
     }
 
     return attachBufferedCookies(
@@ -123,5 +150,5 @@ export async function POST(request: Request) {
   }
 
   await supabase.auth.signOut();
-  return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مخول لهذه الواجهة" }, { status: 403 }));
+  return attachBufferedCookies(NextResponse.json({ error: "الحساب غير مخصص لهذه الواجهة" }, { status: 403 }));
 }
