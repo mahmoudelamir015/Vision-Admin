@@ -31,6 +31,7 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState<AppUserRecord[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
@@ -81,6 +82,7 @@ export default function TeachersPage() {
     setFeedback(null);
     setTeacherPhotoName(null);
     setTeacherPhotoPreview(null);
+    setIsEditModalOpen(false);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -186,6 +188,7 @@ export default function TeachersPage() {
   const startEdit = (teacher: AppUserRecord) => {
     setEditingId(teacher.id ?? null);
     setSelectedTeacherId(teacher.id ?? null);
+    setIsEditModalOpen(true);
     setTeacherPhotoName(teacher.profile_image ?? null);
     setTeacherPhotoPreview(teacher.profile_image ?? null);
     setForm({
@@ -295,6 +298,93 @@ export default function TeachersPage() {
           ) : null}
         </div>
       </section>
+
+      {isEditModalOpen && editingId ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#0A2540]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات المدرس</h2>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">المودال ده بيحفظ التعديل بشكل مباشر لما تضغط حفظ.</p>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+              >
+                إغلاق
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid gap-3 lg:grid-cols-[1.2fr_1fr_0.9fr_0.9fr_0.9fr_auto]">
+              <input
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                placeholder="اسم المدرس"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <input
+                value={form.phone}
+                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                placeholder="010XXXXXXXX"
+                dir="ltr"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <input
+                value={form.school_name}
+                onChange={(event) => setForm((current) => ({ ...current, school_name: event.target.value }))}
+                placeholder="اسم المدرسة"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <input
+                value={form.password}
+                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                placeholder="كلمة مرور اختيارية"
+                type="password"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <select
+                value={form.stage}
+                onChange={(event) => setForm((current) => ({ ...current, stage: event.target.value as TeacherStage }))}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              >
+                <option value="primary">ابتدائي</option>
+                <option value="prep">إعدادي</option>
+                <option value="secondary">ثانوي</option>
+              </select>
+              <div className="lg:col-span-6">
+                <OptionalPhotoPicker
+                  label="صورة المدرس"
+                  description="يمكنك إضافة أو تغيير الصورة من هنا."
+                  fileName={teacherPhotoName}
+                  previewUrl={teacherPhotoPreview}
+                  onChange={(fileName, previewUrl) => {
+                    setTeacherPhotoName(fileName);
+                    setTeacherPhotoPreview(previewUrl);
+                  }}
+                />
+              </div>
+              <div className="lg:col-span-6 flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                >
+                  <Plus className="h-4 w-4" />
+                  {isSaving ? "جاري الحفظ..." : "حفظ التعديل"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {teachers.length === 0 ? (
         <EmptyState

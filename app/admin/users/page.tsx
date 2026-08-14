@@ -53,6 +53,7 @@ export default function UsersPage() {
   const [nextCode, setNextCode] = useState(1);
   const [form, setForm] = useState<StudentForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [password, setPassword] = useState("");
   const [memberActionLoading, setMemberActionLoading] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export default function UsersPage() {
     setEditingId(null);
     setPassword("");
     setFeedback(null);
+    setIsEditModalOpen(false);
   };
 
   const handleStageChange = (stage: StudentStage) => {
@@ -255,6 +257,7 @@ export default function UsersPage() {
   const startEdit = (student: AppUserRecord) => {
     setEditingId(student.id ?? null);
     setSelectedStudentId(student.id ?? null);
+    setIsEditModalOpen(true);
     setForm({
       name: student.name,
       phone: student.phone,
@@ -516,6 +519,108 @@ export default function UsersPage() {
           </div>
         </section>
       )}
+
+      {isEditModalOpen && editingId ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-3xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#0A2540]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات الطالب</h2>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">عدّل البيانات ثم احفظ التغييرات لتحديث السجل فورًا.</p>
+              </div>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+              >
+                إغلاق
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid gap-3 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_auto]">
+              <input
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                placeholder="اسم الطالب"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <input
+                value={form.phone}
+                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                placeholder="010XXXXXXXX"
+                dir="ltr"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <input
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="كلمة مرور اختيارية"
+                type="password"
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              />
+              <select
+                value={form.stage}
+                onChange={(event) => handleStageChange(event.target.value as StudentStage)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              >
+                <option value="primary">الابتدائية</option>
+                <option value="prep">الإعدادية</option>
+                <option value="secondary">الثانوية</option>
+              </select>
+              <select
+                value={form.grade}
+                onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value, track: "" }))}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              >
+                <option value="">الصف</option>
+                {stageGrades[form.stage].map((grade) => (
+                  <option key={grade} value={grade}>
+                    {grade}
+                  </option>
+                ))}
+              </select>
+              <div className="lg:col-span-5">
+                {form.stage === "secondary" && (form.grade === "الصف الثاني الثانوي" || form.grade === "الصف الثالث الثانوي") ? (
+                  <div className="mt-1 grid gap-3 lg:grid-cols-3">
+                    {(["arts", "science", "math"] as Exclude<SecondaryTrack, "">[]).map((track) => (
+                      <button
+                        key={track}
+                        type="button"
+                        onClick={() => setForm((current) => ({ ...current, track }))}
+                        className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+                          form.track === track
+                            ? "border-[#0A2540] bg-[#0A2540] text-white dark:border-[#D4AF37] dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                            : "border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                        }`}
+                      >
+                        {trackLabels[track]}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="lg:col-span-5 flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                >
+                  <Plus className="h-4 w-4" />
+                  {isSaving ? "جاري الحفظ..." : "حفظ التعديل"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
