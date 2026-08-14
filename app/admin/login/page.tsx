@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
 import { ArrowLeft, Building2, Eye, EyeOff, Loader2, LockKeyhole, Shield, Sparkles, UserRound } from "lucide-react";
+import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
 
 type LoginTab = "master_admin" | "staff";
 
@@ -68,8 +69,9 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      const normalizedPhone = normalizeEgyptianPhone(phone) ?? phone;
       const result = await authRequest<{ profile: { role: LoginTab } }>({
-        phone: tab === "master_admin" ? undefined : phone,
+        phone: tab === "master_admin" ? undefined : normalizedPhone,
         password: tab === "master_admin" ? undefined : password,
         expectedRole: tab,
         accessCode: tab === "master_admin" ? accessCode : undefined,
