@@ -321,31 +321,31 @@ export default function UsersPage() {
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="grid gap-3 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_auto]">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             placeholder="اسم الطالب"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
             value={form.phone}
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="كلمة مرور اختيارية"
             type="password"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <select
             value={form.stage}
             onChange={(event) => handleStageChange(event.target.value as StudentStage)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           >
             <option value="primary">الابتدائية</option>
             <option value="prep">الإعدادية</option>
@@ -354,7 +354,7 @@ export default function UsersPage() {
           <select
             value={form.grade}
             onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value, track: "" }))}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           >
             <option value="">الصف</option>
             {stageGrades[form.stage].map((grade) => (
@@ -366,7 +366,7 @@ export default function UsersPage() {
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540] sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {isSaving ? "جارٍ الحفظ..." : editingId ? "حفظ" : "إضافة"}
@@ -374,13 +374,13 @@ export default function UsersPage() {
         </form>
 
         {form.stage === "secondary" && (form.grade === "الصف الثاني الثانوي" || form.grade === "الصف الثالث الثانوي") ? (
-          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
             {(["arts", "science", "math"] as Exclude<SecondaryTrack, "">[]).map((track) => (
               <button
                 key={track}
                 type="button"
                 onClick={() => setForm((current) => ({ ...current, track }))}
-                className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+                className={`w-full rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
                   form.track === track
                     ? "border-[#0A2540] bg-[#0A2540] text-white dark:border-[#D4AF37] dark:bg-[#D4AF37] dark:text-[#0A2540]"
                     : "border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
@@ -422,11 +422,11 @@ export default function UsersPage() {
         ) : null}
 
         {editingId ? (
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
             >
               إلغاء التعديل
             </button>
@@ -522,46 +522,46 @@ export default function UsersPage() {
 
       {isEditModalOpen && editingId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#0A2540]">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات الطالب</h2>
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400">عدّل البيانات ثم احفظ التغييرات لتحديث السجل فورًا.</p>
               </div>
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 sm:w-auto dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
               >
                 إغلاق
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid gap-3 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_auto]">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                 placeholder="اسم الطالب"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="010XXXXXXXX"
                 dir="ltr"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="كلمة مرور اختيارية"
                 type="password"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <select
                 value={form.stage}
                 onChange={(event) => handleStageChange(event.target.value as StudentStage)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               >
                 <option value="primary">الابتدائية</option>
                 <option value="prep">الإعدادية</option>
@@ -570,7 +570,7 @@ export default function UsersPage() {
               <select
                 value={form.grade}
                 onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value, track: "" }))}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               >
                 <option value="">الصف</option>
                 {stageGrades[form.stage].map((grade) => (

@@ -28,6 +28,7 @@ const emptyForm = {
 export default function TeachersPage() {
   const { user } = useAuth();
   const canManageTeachers = user?.role === "master_admin" || user?.permissions.includes("manage_teachers");
+  const canDeleteTeachers = user?.role === "master_admin";
   const [teachers, setTeachers] = useState<AppUserRecord[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -161,6 +162,7 @@ export default function TeachersPage() {
   };
 
   const handleDeleteTeacher = async (teacher: AppUserRecord) => {
+    if (!canDeleteTeachers) return;
     if (!teacher.id) return;
     setMemberActionLoading(teacher.id);
     setFeedback(null);
@@ -301,58 +303,58 @@ export default function TeachersPage() {
 
       {isEditModalOpen && editingId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-4xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#0A2540]">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات المدرس</h2>
                 <p className="text-sm font-bold text-slate-500 dark:text-slate-400">المودال ده بيحفظ التعديل بشكل مباشر لما تضغط حفظ.</p>
               </div>
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:w-auto"
               >
                 إغلاق
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid gap-3 lg:grid-cols-[1.2fr_1fr_0.9fr_0.9fr_0.9fr_auto]">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                 placeholder="اسم المدرس"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="010XXXXXXXX"
                 dir="ltr"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={form.school_name}
                 onChange={(event) => setForm((current) => ({ ...current, school_name: event.target.value }))}
                 placeholder="اسم المدرسة"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={form.password}
                 onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
                 placeholder="كلمة مرور اختيارية"
                 type="password"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <select
                 value={form.stage}
                 onChange={(event) => setForm((current) => ({ ...current, stage: event.target.value as TeacherStage }))}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               >
                 <option value="primary">ابتدائي</option>
                 <option value="prep">إعدادي</option>
                 <option value="secondary">ثانوي</option>
               </select>
-              <div className="lg:col-span-6">
+              <div className="w-full">
                 <OptionalPhotoPicker
                   label="صورة المدرس"
                   description="يمكنك إضافة أو تغيير الصورة من هنا."
@@ -364,18 +366,18 @@ export default function TeachersPage() {
                   }}
                 />
               </div>
-              <div className="lg:col-span-6 flex flex-wrap items-center justify-end gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540] sm:w-auto"
                 >
                   <Plus className="h-4 w-4" />
                   {isSaving ? "جاري الحفظ..." : "حفظ التعديل"}
@@ -440,17 +442,19 @@ export default function TeachersPage() {
                           <Key className="h-4 w-4" />
                           تغيير باسورد
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDeleteTeacher(teacher)}
-                          disabled={memberActionLoading === teacher.id}
-                          className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-red-600 transition-colors ${
-                            memberActionLoading === teacher.id ? "border-red-200 bg-red-100 cursor-wait opacity-70" : "border-red-200 bg-red-50 hover:bg-red-100"
-                          }`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          حذف
-                        </button>
+                        {canDeleteTeachers ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteTeacher(teacher)}
+                            disabled={memberActionLoading === teacher.id}
+                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-red-600 transition-colors ${
+                              memberActionLoading === teacher.id ? "border-red-200 bg-red-100 cursor-wait opacity-70" : "border-red-200 bg-red-50 hover:bg-red-100"
+                            }`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            حذف
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>

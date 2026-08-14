@@ -83,15 +83,15 @@ export default function Sidebar({
     <aside
       className={cn(
         "bg-[#0A2540] text-white flex flex-col min-h-screen shrink-0 relative overflow-hidden transition-all duration-300 z-50",
-        "w-64 fixed lg:static lg:translate-x-0 inset-y-0 right-0",
+        "w-60 fixed inset-y-0 right-0 lg:static lg:translate-x-0",
         isMobileMenuOpen ? "translate-x-0 shadow-2xl" : "translate-x-full",
       )}
     >
-      <div className="absolute top-[-5%] right-[-20%] h-48 w-48 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+      <div className="pointer-events-none absolute top-[-5%] right-[-20%] h-48 w-48 rounded-full bg-white/5 blur-3xl" />
 
-      <div className="relative flex h-16 shrink-0 flex-col items-center justify-center gap-1 border-b border-white/10 px-4 lg:h-28 lg:gap-2">
+      <div className="relative flex h-14 shrink-0 flex-col items-center justify-center gap-1 border-b border-white/10 px-3 lg:h-24 lg:gap-2">
         <button
-          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/60 hover:bg-white/10 lg:hidden"
+          className="absolute left-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-white/60 hover:bg-white/10 lg:hidden"
           onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
           type="button"
         >
@@ -101,16 +101,16 @@ export default function Sidebar({
           </svg>
         </button>
 
-        <div className="flex items-center gap-2 text-xl font-black tracking-tighter text-[#D4AF37] lg:text-2xl">
+        <div className="flex items-center gap-2 text-lg font-black tracking-tighter text-[#D4AF37] lg:text-2xl">
           Vision Center
         </div>
-        <div className="rounded-full border border-white/5 bg-white/10 px-3 py-1 text-[10px] font-medium text-white/80 lg:text-xs">
+        <div className="rounded-full border border-white/5 bg-white/10 px-2.5 py-1 text-[10px] font-medium text-white/80 lg:text-xs">
           {user.name} ({user.role === "master_admin" ? "المدير" : "موظف"})
         </div>
       </div>
 
-      <nav className="z-10 flex-1 overflow-y-auto p-4 pt-6 font-sans font-bold">
-        <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+      <nav className="z-10 flex-1 overflow-y-auto p-3 pt-5 font-sans font-bold lg:p-4 lg:pt-6">
+        <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-white/40">
           {isMasterAdmin ? "MASTER ADMIN" : "STAFF ACCESS"}
         </p>
 
@@ -131,7 +131,7 @@ export default function Sidebar({
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen && setIsMobileMenuOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300",
+                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-300 lg:px-4 lg:py-3 lg:text-base",
                         isActive
                           ? "bg-[#D4AF37] text-[#0A2540] shadow-lg shadow-[#D4AF37]/20 font-black translate-x-1"
                           : "text-white/60 hover:bg-white/5 hover:text-white hover:translate-x-1",
@@ -148,11 +148,11 @@ export default function Sidebar({
         </div>
       </nav>
 
-      <div className="z-10 shrink-0 border-t border-white/10 p-4">
+      <div className="z-10 shrink-0 border-t border-white/10 p-3 lg:p-4">
         <button
           onClick={logout}
           type="button"
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-bold text-red-300 transition-all hover:bg-red-500/10 hover:text-red-400"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-red-300 transition-all hover:bg-red-500/10 hover:text-red-400 lg:px-4 lg:py-3 lg:text-base"
         >
           <LogOut className="h-5 w-5" />
           تسجيل الخروج

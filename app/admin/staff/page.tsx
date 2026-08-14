@@ -343,31 +343,31 @@ export default function StaffPage() {
       </motion.div>
 
       <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <form onSubmit={addStaff} className="grid gap-3 lg:grid-cols-[1.2fr_1fr_0.9fr_auto]">
+        <form onSubmit={addStaff} className="flex flex-col gap-4">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="اسم الموظف"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             placeholder="010XXXXXXXX"
             dir="ltr"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="كلمة مرور اختيارية"
             type="password"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <button
             type="submit"
             disabled={isSaving}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540] sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {isSaving ? "جارٍ الحفظ..." : "إضافة"}
@@ -408,7 +408,7 @@ export default function StaffPage() {
                 key={permission}
                 type="button"
                 onClick={() => togglePermission(permission)}
-                className={`rounded-2xl border px-4 py-4 text-right transition-all ${
+                className={`w-full rounded-2xl border px-4 py-4 text-right transition-all ${
                         active
                           ? "border-[#0A2540] bg-[#0A2540]/5 text-[#0A2540]"
                           : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white"
@@ -462,47 +462,47 @@ export default function StaffPage() {
 
       {isEditModalOpen && editingStaffId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="flex w-full max-w-3xl flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-[#0A2540]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات الموظف</h2>
                 <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">عدّل البيانات ثم اضغط حفظ لتنفيذ التحديث.</p>
               </div>
               <button
                 type="button"
                 onClick={cancelStaffEdit}
-                className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:w-auto"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={addStaff} className="flex flex-col gap-4">
-              <div className="grid gap-3 lg:grid-cols-[1.2fr_1fr_0.9fr_auto]">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_0.9fr_auto]">
                 <input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="اسم الموظف"
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
                 />
                 <input
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   placeholder="010XXXXXXXX"
                   dir="ltr"
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
                 />
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="كلمة مرور اختيارية"
                   type="password"
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
                 />
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540]"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70 dark:bg-[#D4AF37] dark:text-[#0A2540] sm:w-auto"
                 >
                   <Plus className="h-4 w-4" />
                   {isSaving ? "جاري الحفظ..." : "حفظ التعديل"}
@@ -534,11 +534,11 @@ export default function StaffPage() {
                 })}
               </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={cancelStaffEdit}
-                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
                 >
                   إلغاء
                 </button>

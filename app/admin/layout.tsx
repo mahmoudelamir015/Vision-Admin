@@ -7,7 +7,7 @@ import { AuthProvider } from "@/components/admin/AuthContext";
 import { closeRegistrationIfPastDeadline } from "@/src/lib/supabase/system-settings";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -24,38 +24,31 @@ export default function AdminLayout({
 
   return (
     <AuthProvider>
-      <div className="flex min-h-screen bg-[#F7F2E8] dir-rtl" dir="rtl">
-        {!isLogin && (
-          <Sidebar 
-            isMobileMenuOpen={isMobileMenuOpen} 
-            setIsMobileMenuOpen={setIsMobileMenuOpen} 
-          />
-        )}
-        <main className={`flex-1 flex flex-col h-screen overflow-hidden ${isLogin ? 'bg-[#F7F2E8]' : ''}`}>
-          {!isLogin && (
-             <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-sm z-20 relative">
-               <div className="flex items-center gap-3">
-                 <button 
-                   onClick={() => setIsMobileMenuOpen(true)}
-                   className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                 >
-                   <Menu className="w-6 h-6" />
-                 </button>
-                 <h2 className="text-xl font-bold text-[#0A2540]">لوحة التحكم</h2>
-               </div>
-             </header>
-          )}
-          <div className={`flex-1 overflow-y-auto ${isLogin ? '' : 'p-4 sm:p-6'}`}>
-            {children}
-          </div>
-          
-          {/* Mobile Overlay */}
-          {!isLogin && isMobileMenuOpen && (
-            <div 
-               className="fixed inset-0 bg-[#0A2540]/50 backdrop-blur-sm z-40 lg:hidden"
-               onClick={() => setIsMobileMenuOpen(false)}
+      <div className="flex min-h-screen overflow-x-hidden bg-[#F7F2E8] dir-rtl" dir="rtl">
+        {!isLogin ? <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} /> : null}
+        <main className={`flex h-screen flex-1 flex-col overflow-hidden ${isLogin ? "bg-[#F7F2E8]" : ""}`}>
+          {!isLogin ? (
+            <header className="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm sm:h-16 sm:px-5">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
+                >
+                  <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+                </button>
+                <h2 className="text-lg font-bold text-[#0A2540] sm:text-xl">لوحة التحكم</h2>
+              </div>
+            </header>
+          ) : null}
+
+          <div className={`flex-1 overflow-y-auto ${isLogin ? "" : "p-3 sm:p-5 lg:p-6"}`}>{children}</div>
+
+          {!isLogin && isMobileMenuOpen ? (
+            <div
+              className="fixed inset-0 z-40 bg-[#0A2540]/50 backdrop-blur-sm lg:hidden"
+              onClick={() => setIsMobileMenuOpen(false)}
             />
-          )}
+          ) : null}
         </main>
       </div>
     </AuthProvider>

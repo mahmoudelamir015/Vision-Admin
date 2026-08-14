@@ -2,16 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Clock, Users, Wallet, CalendarRange } from "lucide-react";
+import { Clock, Users } from "lucide-react";
 import EmptyState from "@/components/admin/EmptyState";
 import { useAuth } from "@/components/admin/AuthContext";
-import {
-  fetchAttendanceRecords,
-  subscribeToAttendance,
-  type AttendanceRecord,
-} from "@/src/lib/supabase/attendance";
-import { fetchWalletEntries, subscribeToWalletEntries, type WalletEntry } from "@/src/lib/supabase/wallets";
-import { subscribeToUsers } from "@/src/lib/supabase/users";
+import { fetchAttendanceRecords, subscribeToAttendance } from "@/src/lib/supabase/attendance";
+import { fetchWalletEntries, subscribeToWalletEntries } from "@/src/lib/supabase/wallets";
+import { subscribeToUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
 type OpsItem = {
   id: string;
@@ -19,6 +15,19 @@ type OpsItem = {
   title: string;
   subtitle?: string;
   created_at?: string;
+};
+
+const formatOperationDate = (value?: string) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("ar-EG");
+};
+
+const sortTimestamp = (value?: string) => {
+  if (!value) return 0;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 };
 
 export default function OperationsPage() {
@@ -34,7 +43,6 @@ export default function OperationsPage() {
 
     const load = async () => {
       const [attendance, wallets] = await Promise.all([fetchAttendanceRecords(), fetchWalletEntries()]);
-
       const ops: OpsItem[] = [];
 
       attendance.forEach((a) =>
@@ -51,21 +59,20 @@ export default function OperationsPage() {
         ops.push({
           id: `wal-${w.id ?? Math.random().toString(36).slice(2)}`,
           type: "wallet",
-          title: `${w.owner} — ${w.reason}`,
+          title: `${w.owner} - ${w.reason}`,
           subtitle: `${w.amount} EGP ${w.student_phone ? `(${w.student_phone})` : ""}`.trim(),
           created_at: w.created_at,
         }),
       );
 
-      // sort desc
-      ops.sort((a, b) => (b.created_at ?? "")!.localeCompare(a.created_at ?? ""));
+      ops.sort((a, b) => sortTimestamp(b.created_at) - sortTimestamp(a.created_at));
 
       if (isMounted) setItems(ops);
     };
 
     void load();
 
-    const unsubAttendance = subscribeToAttendance(async (records) => {
+    const unsubAttendance = subscribeToAttendance((records) => {
       setItems((current) => {
         const next = [...current.filter((i) => i.type !== "attendance")];
         records.forEach((a) =>
@@ -77,7 +84,7 @@ export default function OperationsPage() {
             created_at: a.created_at,
           }),
         );
-        next.sort((x, y) => (y.created_at ?? "").localeCompare(x.created_at ?? ""));
+        next.sort((x, y) => sortTimestamp(y.created_at) - sortTimestamp(x.created_at));
         return next;
       });
     });
@@ -89,12 +96,12 @@ export default function OperationsPage() {
           next.push({
             id: `wal-${w.id ?? Math.random().toString(36).slice(2)}`,
             type: "wallet",
-            title: `${w.owner} — ${w.reason}`,
+            title: `${w.owner} - ${w.reason}`,
             subtitle: `${w.amount} EGP ${w.student_phone ? `(${w.student_phone})` : ""}`.trim(),
             created_at: w.created_at,
           }),
         );
-        next.sort((x, y) => (y.created_at ?? "").localeCompare(x.created_at ?? ""));
+        next.sort((x, y) => sortTimestamp(y.created_at) - sortTimestamp(x.created_at));
         return next;
       });
     });
@@ -107,11 +114,11 @@ export default function OperationsPage() {
             id: `usr-${u.id ?? u.phone}`,
             type: "user",
             title: u.name,
-            subtitle: `${u.role} • ${u.phone}`,
-            created_at: u.id ?? undefined,
+            subtitle: `${u.role} - ${u.phone}`,
+            created_at: (u as AppUserRecord & { created_at?: string }).created_at,
           }),
         );
-        next.sort((x, y) => (y.created_at ?? "").localeCompare(x.created_at ?? ""));
+        next.sort((x, y) => sortTimestamp(y.created_at) - sortTimestamp(x.created_at));
         return next;
       });
     });
@@ -128,10 +135,10 @@ export default function OperationsPage() {
 
   if (!isAllowed) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-600">
-        <Clock className="mb-3 h-14 w-14 opacity-70" />
-        <h2 className="text-xl font-extrabold">غير مصرح لك بدخول غرفة العمليات</h2>
-        <p className="mt-2 max-w-md text-sm font-bold leading-6">اطلب صلاحية ‘العمليات’ من المدير لإظهار هذه الواجهة.</p>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-6 text-center text-red-600 sm:p-8">
+        <Clock className="mb-3 h-12 w-12 opacity-70 sm:h-14 sm:w-14" />
+        <h2 className="text-lg font-extrabold sm:text-xl">غير مصرح لك بدخول غرفة العمليات</h2>
+        <p className="mt-2 max-w-md text-sm font-bold leading-6">اطلب صلاحية العمليات من المدير لإظهار هذه الواجهة.</p>
       </div>
     );
   }
@@ -141,15 +148,19 @@ export default function OperationsPage() {
       <EmptyState
         icon={Users}
         title="لا توجد عمليات حتى الآن"
-        description="العمليات تظهر هنا فور وقوعها — حضور، محفظة، وتحديثات الحسابات."
+        description="العمليات تظهر هنا فور وقوعها - حضور، محفظة، وتحديثات الحسابات."
       />
     );
   }
 
   return (
     <div className="mx-auto max-w-6xl">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-extrabold text-[#0A2540]">غرفة العمليات</h1>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+      >
+        <h1 className="text-xl font-extrabold text-[#0A2540] sm:text-2xl">غرفة العمليات</h1>
         <p className="mt-1 text-sm font-bold text-slate-500">تدفق حي لآخر الأحداث في النظام.</p>
 
         <div className="mt-6 grid gap-3">
@@ -159,14 +170,14 @@ export default function OperationsPage() {
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2 }}
-              className="rounded-2xl border p-4 bg-slate-50"
+              className="rounded-2xl border bg-slate-50 p-3 sm:p-4"
             >
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div>
                   <div className="text-sm font-extrabold text-[#0A2540]">{it.title}</div>
                   {it.subtitle ? <div className="mt-1 text-xs text-slate-500">{it.subtitle}</div> : null}
                 </div>
-                <div className="text-xs font-mono text-slate-400">{it.created_at ? new Date(it.created_at).toLocaleString() : ""}</div>
+                <div className="text-xs font-mono text-slate-400">{formatOperationDate(it.created_at)}</div>
               </div>
             </motion.div>
           ))}
