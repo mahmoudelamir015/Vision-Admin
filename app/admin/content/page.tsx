@@ -29,6 +29,7 @@ export default function ContentPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadMaterials();
   }, []);
 
