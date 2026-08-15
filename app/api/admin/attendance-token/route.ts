@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getCurrentAdminProfile } from "@/src/lib/auth/session";
 import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
-import { createRouteSupabaseClient } from "@/src/lib/supabase/server";
+import { createServiceSupabaseClient } from "@/src/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +9,6 @@ export async function POST(request: Request) {
     if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
     const body = (await request.json().catch(() => null)) as { shared?: boolean; student_phone?: string; valid_for_seconds?: number } | null;
-    const { createServiceSupabaseClient } = await import("@/src/lib/supabase/admin");
     const supabase = createServiceSupabaseClient();
 
     if (body?.shared) {
