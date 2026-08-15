@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Activity, CircleDashed, Download, QrCode, Clock, RefreshCcw, Search, Users } from "lucide-react";
-import QRCode from "react-qr-code";
+import { Activity, CircleDashed, Key, Clock, RefreshCcw, Search, Users } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
 import EmptyState from "@/components/admin/EmptyState";
 import type { AttendanceRecord } from "@/src/lib/supabase/attendance";
@@ -43,11 +42,10 @@ export default function AttendancePage() {
   const [students, setStudents] = useState<ApiStudent[]>([]);
   const [qrValue, setQrValue] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [sessionDurationSeconds, setSessionDurationSeconds] = useState(60);
+  const [sessionDurationSeconds, setSessionDurationSeconds] = useState(600); // 10 minutes default
   const [message, setMessage] = useState<string | null>(null);
   const [manualSearch, setManualSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const barcodeRef = useRef<HTMLDivElement | null>(null);
 
   const filteredManualSearchResults = useMemo(() => {
     const query = manualSearch.trim().toLowerCase();
@@ -114,39 +112,7 @@ export default function AttendancePage() {
     };
   }, [activeTab]);
 
-  const downloadBarcode = async () => {
-    const svg = barcodeRef.current?.querySelector("svg");
-    if (!svg) return;
-
-    const serialized = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
-
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = image.width || 512;
-      canvas.height = image.height || 512;
-
-      const context = canvas.getContext("2d");
-      if (!context) {
-        URL.revokeObjectURL(url);
-        return;
-      }
-
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(image, 0, 0);
-      URL.revokeObjectURL(url);
-
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/png");
-      link.download = "royacenter-attendance-token.png";
-      link.click();
-    };
-
-    image.src = url;
-  };
+  // Removed barcode download logic since we use a 4-digit PIN now
 
   const issueToken = async () => {
     setIsLoading(true);
@@ -166,7 +132,7 @@ export default function AttendancePage() {
 
       setQrValue(tokenData.token);
       setExpiresAt(tokenData.expires_at ?? null);
-      setMessage("تم توليد رمز QR بنجاح");
+      setMessage("تم توليد كود الحصة بنجاح");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "حصل خطأ أثناء توليد التوكن");
     } finally {
@@ -241,7 +207,7 @@ export default function AttendancePage() {
                 activeTab === "DYNAMIC" ? "bg-white text-[#0A2540] shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              QR مباشر
+              كود الحصة (PIN)
             </button>
           ) : null}
         </div>
@@ -311,31 +277,31 @@ export default function AttendancePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.05 }}
-          className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+          className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-md"
         >
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-[#0A2540]/5 px-3 py-1 text-xs font-black uppercase tracking-[0.25em] text-[#0A2540]">
-                <QrCode className="h-4 w-4" />
-                رمز QR مباشر
+                <Key className="h-4 w-4" />
+                سيلف-أرتندنس بكود الحصة
               </div>
-              <h2 className="text-2xl font-extrabold text-[#0A2540]">شاشة QR الديناميكي</h2>
+              <h2 className="text-2xl font-extrabold text-[#0A2540]">شاشة كود حضور الجلسة</h2>
               <p className="max-w-xl text-sm font-bold leading-7 text-slate-500">
-                أنشئ رمز حضور مباشر صالح لجميع الطلاب لفترة قصيرة. استخدم هذه الشاشة في السنتر أو أي جهاز عرض، وسيتم تسجيل الحضور فوراً عند المسح.
+                أنشئ كود حضور عشوائي مكون من 4 أرقام ليقوم الطلاب بكتابته بأنفسهم في حساباتهم لتسجيل حضورهم تلقائياً فوراً.
               </p>
 
               <div className="grid gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                 <label className="space-y-2 text-sm font-bold text-slate-700">
-                  مدة صلاحية رمز الـ QR
+                  مدة صلاحية كود الحصة (PIN)
                   <select
                     value={sessionDurationSeconds}
                     onChange={(event) => setSessionDurationSeconds(Number(event.target.value))}
                     className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none"
                   >
-                    <option value={60}>1 دقيقة</option>
-                    <option value={120}>2 دقائق</option>
                     <option value={300}>5 دقائق</option>
                     <option value={600}>10 دقائق</option>
+                    <option value={1800}>30 دقيقة</option>
+                    <option value={3600}>1 ساعة</option>
                   </select>
                 </label>
 
@@ -344,25 +310,16 @@ export default function AttendancePage() {
                     type="button"
                     onClick={() => void issueToken()}
                     disabled={isLoading}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#123B66] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[#0A2540] px-5 py-3.5 text-sm font-bold text-white transition-all shadow-md hover:bg-[#123B66]"
                   >
                     <RefreshCcw className="h-4 w-4" />
-                    {isLoading ? "جاري التوليد..." : "توليد QR جديد"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={downloadBarcode}
-                    disabled={!qrValue}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3.5 text-sm font-bold text-slate-600 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Download className="h-4 w-4" />
-                    تحميل الصورة
+                    {isLoading ? "جاري التوليد..." : "توليد كود حصة جديد"}
                   </button>
                 </div>
 
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-4">
                   <label className="space-y-2 text-sm font-bold text-slate-700">
-                    تسجيل حضور يدوي سريع
+                    تسجيل حضور يدوي سريع للطالب المفقود
                     <div className="relative">
                       <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
@@ -398,20 +355,31 @@ export default function AttendancePage() {
                   ) : null}
                 </div>
 
-                {message ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{message}</div> : null}
+                {message ? <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{message}</div> : null}
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-5 flex flex-col items-center justify-center text-center">
               <div className="mb-4 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-[#D4AF37]" />
-                <h3 className="text-lg font-extrabold text-[#0A2540]">QR والحماية</h3>
+                <h3 className="text-lg font-extrabold text-[#0A2540]">كود الحصة النشط حالياً</h3>
               </div>
 
-              <div ref={barcodeRef} className="inline-flex rounded-[2rem] border border-slate-200 bg-white p-4 shadow-lg">
-                <div className="rounded-[1.5rem] border-4 border-[#0A2540] bg-white p-4">
-                  {qrValue ? <QRCode value={qrValue} size={260} fgColor="#0A2540" /> : <EmptyState icon={Users} title="لم يتم توليد QR بعد" description="اضغط توليد QR جديد لإنشاء رمز صالح حالياً." />}
-                </div>
+              <div className="flex flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white p-8 shadow-md w-full max-w-xs min-h-[220px]">
+                {qrValue ? (
+                  <div className="animate-pulse space-y-4">
+                    <div className="text-6xl font-mono tracking-widest font-black text-[#D4AF37] select-all">
+                      {qrValue}
+                    </div>
+                    {expiresAt ? (
+                      <p className="text-xs font-bold text-slate-400">
+                        ينتهي في: {new Date(expiresAt).toLocaleTimeString("ar-EG")}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <EmptyState icon={Users} title="لا يوجد كود نشط" description="اضغط زر التوليد بالجانب لإنشاء كود PIN صالح للحصة." />
+                )}
               </div>
             </div>
           </div>

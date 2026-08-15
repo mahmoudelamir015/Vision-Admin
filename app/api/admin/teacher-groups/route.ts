@@ -16,13 +16,13 @@ export async function GET(request: Request) {
       id,
       subject,
       created_at,
-      teacher:teacher_id (id, name, phone),
-      student:student_id (id, name, phone, grade, stage, track, student_code)
+      teacher:teacher_user_id (id, name, phone),
+      student:student_user_id (id, name, phone, grade, stage, track, student_code)
     `)
     .order("created_at", { ascending: false });
 
   if (teacherId) {
-    query = query.eq("teacher_id", teacherId);
+    query = query.eq("teacher_user_id", teacherId);
   }
 
   const { data, error } = await query;
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const supabase = createServiceSupabaseClient();
   const { data, error } = await supabase
     .from("teacher_student_groups")
-    .upsert({ teacher_id: teacherId, student_id: studentId, subject }, { onConflict: "teacher_id,student_id,subject" })
+    .upsert({ teacher_user_id: teacherId, student_user_id: studentId, subject }, { onConflict: "teacher_user_id, student_user_id, subject" })
     .select("*")
     .single();
 
