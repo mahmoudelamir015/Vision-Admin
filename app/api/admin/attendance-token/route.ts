@@ -1,54 +1,63 @@
 import { NextResponse } from "next/server";
 import { getCurrentAdminProfile } from "@/src/lib/auth/session";
-import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
 import { createServiceSupabaseClient } from "@/src/lib/supabase/admin";
+
+function generatePin(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
 
 export async function POST(request: Request) {
   try {
     const profile = await getCurrentAdminProfile();
     if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
-    const body = (await request.json().catch(() => null)) as { shared?: boolean; student_phone?: string; valid_for_seconds?: number } | null;
+    const body = (await request.json().catch(() => null)) as {
+      shared?: boolean;
+      student_phone?: string;
+      valid_for_seconds?: number;
+    } | null;
+
+    const validSeconds = Math.max(60, Math.min(body?.valid_for_seconds ?? 600, 7200));
     const supabase = createServiceSupabaseClient();
 
-    if (body?.shared) {
-      const { data, error } = await supabase.rpc("issue_shared_attendance_token", {
-        p_valid_for_seconds: body.valid_for_seconds ?? 60,
+    if (body?.shared !== false) {
+      // Generate a 4-digit PIN directly without relying on RPC is_admin_user()
+      const pin = generatePin();
+      const expiresAt = new Date(Date.now() + validSeconds * 1000).toISOString();
+
+      // Clean old shared tokens first
+      await supabase.from("attendance_tokens").delete().eq("shared", true);
+
+      const { error: insertError } = await supabase.from("attendance_tokens").insert({
+        shared: true,
+        token_hash: await hashToken(pin),
+        pin_hash: null,
+        expires_at: expiresAt,
+        use_count: 0,
       });
 
-      if (error) {
-        const message = error?.message || "تعذر توليد رمز الحضور";
-        return NextResponse.json({ error: message }, { status: 400 });
+      if (insertError) {
+        return NextResponse.json({ error: insertError.message }, { status: 400 });
       }
 
-      const tokenRow = Array.isArray(data) ? data[0] : data;
-      if (!tokenRow) {
-        return NextResponse.json({ error: "تعذر توليد رمز الحضور" }, { status: 400 });
-      }
-
-      return NextResponse.json({ token: tokenRow });
+      return NextResponse.json({
+        token: { token: pin, expires_at: expiresAt },
+      });
     }
 
-    const studentPhone = normalizeEgyptianPhone(body?.student_phone ?? "");
-    if (!studentPhone) return NextResponse.json({ error: "رقم الطالب غير صالح" }, { status: 400 });
-
-    const { data, error } = await supabase.rpc("issue_attendance_token", {
-      p_student_phone: studentPhone,
-      p_valid_for_minutes: Math.max(1, Math.min(Math.ceil((body?.valid_for_seconds ?? 600) / 60), 60)),
-    });
-
-    if (error) {
-      const message = error?.message || "تعذر توليد رمز الحضور";
-      return NextResponse.json({ error: message }, { status: 400 });
-    }
-
-    const tokenRow = Array.isArray(data) ? data[0] : data;
-    if (!tokenRow) {
-      return NextResponse.json({ error: "تعذر توليد رمز الحضور" }, { status: 400 });
-    }
-
-    return NextResponse.json({ token: tokenRow });
+    return NextResponse.json({ error: "unsupported mode" }, { status: 400 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "تعذر توليد رمز الحضور" }, { status: 400 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "تعذر توليد رمز الحضور" },
+      { status: 400 }
+    );
   }
+}
+
+async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }

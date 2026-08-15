@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Bell,
+  ClipboardList,
   Eye,
   FileText,
   GraduationCap,
@@ -45,6 +46,7 @@ const navItems: NavItem[] = [
   { name: "الخزنة", href: "/admin/vault", icon: Vault, permission: "vault", group: "management", masterOnly: true },
   { name: "إدارة المحتوى", href: "/admin/content", icon: FileText, permission: "content", group: "content", masterOnly: true },
   { name: "مركز الإشعارات", href: "/admin/notifications", icon: Bell, permission: "notifications", group: "content", masterOnly: true },
+  { name: "طلبات التعديل", href: "/admin/change-requests", icon: ClipboardList, permission: "notifications", group: "content", masterOnly: true },
 ];
 
 const groupLabels: Record<NavGroup, string> = {
