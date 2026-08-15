@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
@@ -11,7 +11,6 @@ import type { AppUserRecord } from "@/src/lib/supabase/users";
 
 type AttendanceTokenResponse = {
   token?: string;
-  pin_code?: string;
   expires_at?: string;
 };
 
@@ -44,7 +43,6 @@ export default function AttendancePage() {
   const [students, setStudents] = useState<ApiStudent[]>([]);
   const [qrValue, setQrValue] = useState("");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
-  const [pinCode, setPinCode] = useState<string | null>(null);
   const [sessionDurationSeconds, setSessionDurationSeconds] = useState(60);
   const [message, setMessage] = useState<string | null>(null);
   const [manualSearch, setManualSearch] = useState("");
@@ -168,7 +166,6 @@ export default function AttendancePage() {
 
       setQrValue(tokenData.token);
       setExpiresAt(tokenData.expires_at ?? null);
-      setPinCode(tokenData.pin_code ?? null);
       setMessage("تم توليد رمز QR بنجاح");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "حصل خطأ أثناء توليد التوكن");
@@ -415,14 +412,6 @@ export default function AttendancePage() {
                 <div className="rounded-[1.5rem] border-4 border-[#0A2540] bg-white p-4">
                   {qrValue ? <QRCode value={qrValue} size={260} fgColor="#0A2540" /> : <EmptyState icon={Users} title="لم يتم توليد QR بعد" description="اضغط توليد QR جديد لإنشاء رمز صالح حالياً." />}
                 </div>
-              </div>
-
-              <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white p-6 text-center">
-                <p className="text-sm font-bold text-slate-500">الـ PIN المختصر</p>
-                <p className="mt-3 text-5xl font-black tracking-[0.3em] text-[#0A2540]">{pinCode || "---"}</p>
-                <p className="mt-3 text-sm font-bold leading-7 text-slate-500">
-                  استخدم هذا الرمز المباشر مع جهاز المسح. {expiresAt ? `ينتهي في ${new Date(expiresAt).toLocaleString("ar-EG")}` : ""}
-                </p>
               </div>
             </div>
           </div>

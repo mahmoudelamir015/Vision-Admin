@@ -12,6 +12,7 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Network,
   Vault,
   Wallet,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { name: "تقفيل اليومية", href: "/admin/wallet/daily-close", icon: Wallet, permission: "wallet", group: "finance", masterOnly: true },
   { name: "إدارة الموظفين", href: "/admin/staff", icon: UserPlus, permission: "staff", group: "management" },
   { name: "إدارة المدرسين", href: "/admin/teachers", icon: GraduationCap, permission: "manage_teachers", group: "management" },
+  { name: "تخصيص المواد", href: "/admin/teacher-groups", icon: Network, permission: "manage_teachers", group: "management" },
   { name: "غرفة العمليات", href: "/admin/operations", icon: Eye, permission: "operations", group: "management" },
   { name: "الخزنة", href: "/admin/vault", icon: Vault, permission: "vault", group: "management", masterOnly: true },
   { name: "إدارة المحتوى", href: "/admin/content", icon: FileText, permission: "content", group: "content", masterOnly: true },

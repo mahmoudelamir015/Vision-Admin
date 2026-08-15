@@ -76,7 +76,25 @@ export default function NotificationsPage() {
   const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
   const [approvalMessage, setApprovalMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  const [isSending, setIsSending] = useState(false);
+  const [sendFeedback, setSendFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+
   const availableGroups = useMemo(() => groupOptionsByStage[stage], [stage]);
+
+  const loadHistory = async () => {
+    try {
+      const res = await fetch("/api/admin/notifications");
+      const data = await res.json().catch(() => null);
+      if (data?.notifications) {
+        setHistory(data.notifications);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    void loadHistory();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,6 +143,39 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!title.trim() || !body.trim()) {
+      setSendFeedback({ type: "error", message: "العنوان ونص الإشعار مطلوبان" });
+      return;
+    }
+    setIsSending(true);
+    setSendFeedback(null);
+    try {
+      const payload: Record<string, any> = { title, body, audience };
+      if (audience === "GROUP") {
+        payload.stage = stage;
+        payload.grade = groupName;
+        payload.track = section;
+      } else if (audience === "STUDENT") {
+        payload.student_code = studentCode;
+      }
+      const res = await fetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("تعذر إرسال الإشعار");
+      setSendFeedback({ type: "success", message: "تم إرسال الإشعار بنجاح" });
+      setTitle("");
+      setBody("");
+      void loadHistory();
+    } catch (e) {
+      setSendFeedback({ type: "error", message: "حدث خطأ أثناء الإرسال" });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-600">
@@ -150,7 +201,7 @@ export default function NotificationsPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">مركز الإشعارات</h1>
             <p className="text-sm font-bold text-slate-500 text-slate-500">
-              الصفحة جاهزة لاستقبال نطاق الاستهداف من Supabase بدون أي بيانات وهمية.
+              يمكنك إرسال الإشعارات للجميع أو لفئة معينة وسيقوم النظام بتوجيهها.
             </p>
           </div>
         </div>
@@ -227,11 +278,11 @@ export default function NotificationsPage() {
           <div>
             <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">الفئة المستهدفة</h2>
             <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
-              اختار جمهور الإشعار قبل ما نربطه بالإرسال الحقيقي.
+              اختار جمهور الإشعار لتحديد من يستلمه.
             </p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 bg-slate-50 text-slate-700">
-            NO MOCK DATA
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
+            LIVE DB
           </span>
         </div>
 
@@ -341,7 +392,7 @@ export default function NotificationsPage() {
           <div>
             <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">محتوى الإشعار</h2>
             <p className="text-sm font-bold text-slate-500 text-slate-500">
-              هنربطه لاحقًا بجدول الإشعارات بعد ما يتجهز الـ backend.
+              اكتب عنوان ونص الإشعار الواضح.
             </p>
           </div>
         </div>
@@ -368,6 +419,22 @@ export default function NotificationsPage() {
             />
           </label>
         </div>
+
+        <div className="mt-5 flex items-center justify-between">
+          <button
+            type="button"
+            disabled={isSending}
+            onClick={handleSendNotification}
+            className="rounded-2xl bg-[#0A2540] px-8 py-3 text-sm font-bold text-white transition-opacity disabled:opacity-50"
+          >
+            {isSending ? "جاري الإرسال..." : "إرسال الإشعار"}
+          </button>
+          {sendFeedback ? (
+            <span className={`text-sm font-bold ${sendFeedback.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+              {sendFeedback.message}
+            </span>
+          ) : null}
+        </div>
       </motion.section>
 
       <motion.section
@@ -384,20 +451,44 @@ export default function NotificationsPage() {
             <div>
               <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">سجل الإشعارات</h2>
               <p className="text-sm font-bold text-slate-500 text-slate-500">
-                لسه مفيش بيانات مرسلة، فإحنا مستنيين الربط الحقيقي.
+                أحدث الإشعارات المرسلة من النظام.
               </p>
             </div>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 bg-slate-50 text-slate-700">
-            EMPTY FEED
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
+            {history.length} ACTIVE
           </span>
         </div>
 
-        <EmptyState
-          icon={CircleDashed}
-          title="لا توجد إشعارات مرسلة حالياً"
-          description="بعد الربط مع Supabase هتظهر هنا الإشعارات المرسلة للجميع أو للصفوف أو للطلاب المحددين."
-        />
+        {history.length === 0 ? (
+          <EmptyState
+            icon={CircleDashed}
+            title="لا توجد إشعارات مرسلة حالياً"
+            description="ستظهر الإشعارات المرسلة من للإدارة هنا لتوثيقها."
+          />
+        ) : (
+          <div className="grid gap-3">
+            {history.map((record) => (
+              <div key={record.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h4 className="font-extrabold text-[#0A2540]">{record.title}</h4>
+                    <p className="text-sm text-slate-600">{record.body}</p>
+                  </div>
+                  <span className="text-xs font-bold text-slate-400">
+                    {new Date(record.created_at).toLocaleString("ar-EG")}
+                  </span>
+                </div>
+                {record.audience_role || record.stage ? (
+                  <div className="mt-3 flex gap-2 text-[10px] font-bold text-slate-500">
+                    {record.audience_role ? <span className="rounded-full bg-slate-200 px-2 py-1">Roles: {record.audience_role}</span> : null}
+                    {record.stage ? <span className="rounded-full bg-slate-200 px-2 py-1">{record.stage} • {record.grade}</span> : null}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </motion.section>
     </div>
   );
