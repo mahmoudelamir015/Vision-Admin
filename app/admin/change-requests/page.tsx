@@ -65,11 +65,11 @@ export default function ChangeRequestsPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+      <header className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">طلبات التعديل</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">راجع الطلبات الجديدة واعتمدها او ارفضها مع سبب واضح.</p>
+            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">طلبات التعديل</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">راجع الطلبات الجديدة واعتمدها او ارفضها مع سبب واضح.</p>
           </div>
           <button
             type="button"
@@ -89,7 +89,7 @@ export default function ChangeRequestsPage() {
       ) : (
         <div className="grid gap-4">
           {requests.map((request) => (
-            <article key={request.id} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+            <article key={request.id} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
@@ -99,8 +99,8 @@ export default function ChangeRequestsPage() {
                       {request.status}
                     </span>
                   </div>
-                  <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">{request.new_value}</h2>
-                  <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{request.reason}</p>
+                  <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">{request.new_value}</h2>
+                  <p className="text-sm font-bold text-slate-500 text-slate-500">{request.reason}</p>
                   {request.admin_reason ? <p className="text-sm font-bold text-red-600">سبب الإدارة: {request.admin_reason}</p> : null}
                 </div>
 

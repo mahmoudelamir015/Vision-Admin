@@ -334,8 +334,8 @@ export default function StaffPage() {
             <Users className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة الموظفين</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة الموظفين</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
               إضافة، تعديل الصلاحيات، حذف، وتفعيل أكثر من صلاحية للموظف الواحد.
             </p>
           </div>
@@ -348,21 +348,21 @@ export default function StaffPage() {
             value={name}
             onChange={(event) => setName(event.target.value)}
             placeholder="اسم الموظف"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             placeholder="010XXXXXXXX"
             dir="ltr"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="كلمة مرور اختيارية"
             type="password"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <button
             type="submit"
@@ -427,8 +427,8 @@ export default function StaffPage() {
           <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{selectedStaff.name}</h3>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{selectedStaff.phone}</p>
+                <h3 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{selectedStaff.name}</h3>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">{selectedStaff.phone}</p>
               </div>
               <button
                 type="button"
@@ -462,16 +462,16 @@ export default function StaffPage() {
 
       {isEditModalOpen && editingStaffId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-800/40 p-4">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 border-slate-200 dark:bg-[#0A2540]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات الموظف</h2>
-                <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">عدّل البيانات ثم اضغط حفظ لتنفيذ التحديث.</p>
+                <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">تعديل بيانات الموظف</h2>
+                <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">عدّل البيانات ثم اضغط حفظ لتنفيذ التحديث.</p>
               </div>
               <button
                 type="button"
                 onClick={cancelStaffEdit}
-                className="w-full rounded-xl border border-slate-200 bg-white p-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:w-auto"
+                className="w-full rounded-xl border border-slate-200 bg-white p-2 text-slate-500 border-slate-200 bg-slate-50 text-slate-700 sm:w-auto"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -483,21 +483,21 @@ export default function StaffPage() {
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="اسم الموظف"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
                 />
                 <input
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   placeholder="010XXXXXXXX"
                   dir="ltr"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
                 />
                 <input
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="كلمة مرور اختيارية"
                   type="password"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
                 />
                 <button
                   type="submit"
@@ -522,7 +522,7 @@ export default function StaffPage() {
                       className={`rounded-2xl border px-4 py-4 text-right transition-all ${
                         active
                           ? "border-[#0A2540] bg-[#0A2540]/5 text-[#0A2540]"
-                          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white border-slate-200 bg-white text-slate-700"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -538,7 +538,7 @@ export default function StaffPage() {
                 <button
                   type="button"
                   onClick={cancelStaffEdit}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 text-slate-700 sm:w-auto"
                 >
                   إلغاء
                 </button>
@@ -555,10 +555,10 @@ export default function StaffPage() {
           description="أضف أول موظف من النموذج بالأعلى، وبعدها هنقدر نعدل الصلاحيات أو نوقف الحساب من هنا."
         />
       ) : (
-        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full text-right">
-              <thead className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-300">
+              <thead className="bg-slate-50 text-slate-500 bg-slate-50 text-slate-700">
                 <tr>
                   <th className="px-4 py-3 text-sm font-bold">الاسم</th>
                   <th className="px-4 py-3 text-sm font-bold">الموبايل</th>
@@ -567,11 +567,11 @@ export default function StaffPage() {
                   <th className="px-4 py-3 text-sm font-bold text-left">إجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+              <tbody className="divide-y divide-slate-200 divide-slate-200">
                 {staff.map((member) => (
                   <tr key={member.id ?? member.phone}>
-                    <td className="px-4 py-4 font-bold text-[#0A2540] dark:text-white">{member.name}</td>
-                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 dark:text-slate-300">
+                    <td className="px-4 py-4 font-bold text-[#0A2540] text-[#0A2540]">{member.name}</td>
+                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">
                       {member.phone}
                     </td>
                     <td className="px-4 py-4">
@@ -608,8 +608,8 @@ export default function StaffPage() {
                           memberActionLoading === member.id
                             ? "bg-slate-100 text-slate-400 cursor-wait opacity-70"
                             : member.active
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                              : "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400"
+                              ? "bg-emerald-50 text-emerald-700 bg-emerald-100 text-emerald-800"
+                              : "bg-slate-100 text-slate-500 bg-slate-50 text-slate-500"
                         }`}
                       >
                         {member.active ? "نشط" : "موقوف"}

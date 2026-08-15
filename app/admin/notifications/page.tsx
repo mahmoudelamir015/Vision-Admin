@@ -141,15 +141,15 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
       >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
             <Bell className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">مركز الإشعارات</h1>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">مركز الإشعارات</h1>
+            <p className="text-sm font-bold text-slate-500 text-slate-500">
               الصفحة جاهزة لاستقبال نطاق الاستهداف من Supabase بدون أي بيانات وهمية.
             </p>
           </div>
@@ -160,17 +160,17 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
       >
         <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">طلبات استرجاع كلمة المرور</h2>
-              <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-300">
+              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">طلبات استرجاع كلمة المرور</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500 text-slate-700">
                 الطلبات المعلقة بتظهر هنا، وبعد الموافقة يقدر المستخدم يغيّر الباسورد خلال 24 ساعة.
               </p>
             </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 dark:bg-white/10 dark:text-amber-200">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 bg-slate-100 dark:text-amber-200">
               {resetRequests.length} طلب
             </span>
           </div>          {approvalMessage ? (
@@ -193,11 +193,11 @@ export default function NotificationsPage() {
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {resetRequests.map((request) => (
-                <div key={request.phone} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+                <div key={request.phone} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm border-slate-200 bg-white">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-base font-extrabold text-[#0A2540] dark:text-white">{request.name}</h3>
-                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{request.phone}</p>
+                      <h3 className="text-base font-extrabold text-[#0A2540] text-[#0A2540]">{request.name}</h3>
+                      <p className="text-sm font-bold text-slate-500 text-slate-500">{request.phone}</p>
                     </div>
                     <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                       {request.role}
@@ -205,7 +205,7 @@ export default function NotificationsPage() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    <div className="text-xs font-bold text-slate-500 text-slate-500">
                       {String(getPasswordResetMeta(request)?.requested_at ?? "")}
                     </div>
                     <button
@@ -225,12 +225,12 @@ export default function NotificationsPage() {
 
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">الفئة المستهدفة</h2>
-            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">الفئة المستهدفة</h2>
+            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
               اختار جمهور الإشعار قبل ما نربطه بالإرسال الحقيقي.
             </p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 bg-slate-50 text-slate-700">
             NO MOCK DATA
           </span>
         </div>
@@ -251,8 +251,8 @@ export default function NotificationsPage() {
                 onClick={() => setAudience(item.id)}
                 className={`rounded-2xl border px-4 py-4 text-right transition-all ${
                   active
-                    ? "border-[#0A2540] bg-[#0A2540]/5 text-[#0A2540] shadow-sm dark:border-[#D4AF37] dark:bg-[#D4AF37]/10 dark:text-white"
-                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                    ? "border-[#0A2540] bg-[#0A2540]/5 text-[#0A2540] shadow-sm dark:border-[#D4AF37] dark:bg-[#D4AF37]/10 text-[#0A2540]"
+                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white border-slate-200 bg-slate-50 text-slate-700"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -267,7 +267,7 @@ export default function NotificationsPage() {
         {audience === "GROUP" ? (
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <label className="space-y-2 md:col-span-1">
-              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">اختر المرحلة الدراسية</span>
+              <span className="block text-sm font-bold text-slate-700 text-slate-700">اختر المرحلة الدراسية</span>
               <select
                 value={stage}
                 onChange={(event) => {
@@ -275,7 +275,7 @@ export default function NotificationsPage() {
                   setStage(nextStage);
                   setGroupName(groupOptionsByStage[nextStage][0]);
                 }}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               >
                 {stageOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -286,11 +286,11 @@ export default function NotificationsPage() {
             </label>
 
             <label className="space-y-2 md:col-span-2">
-              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">اختر الصف الدراسي</span>
+              <span className="block text-sm font-bold text-slate-700 text-slate-700">اختر الصف الدراسي</span>
               <select
                 value={groupName}
                 onChange={(event) => setGroupName(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               >
                 {availableGroups.map((item) => (
                   <option key={item} value={item}>
@@ -301,12 +301,12 @@ export default function NotificationsPage() {
             </label>
 
             <label className="space-y-2 md:col-span-3">
-              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">القسم أو الشعبة</span>
+              <span className="block text-sm font-bold text-slate-700 text-slate-700">القسم أو الشعبة</span>
               <input
                 value={section}
                 onChange={(event) => setSection(event.target.value)}
                 placeholder="مثال: أ / ب / علمي علوم"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
             </label>
           </div>
@@ -315,13 +315,13 @@ export default function NotificationsPage() {
         {audience === "STUDENT" ? (
           <div className="mt-6">
             <label className="space-y-2 block">
-              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">كود الطالب</span>
+              <span className="block text-sm font-bold text-slate-700 text-slate-700">كود الطالب</span>
               <input
                 value={studentCode}
                 onChange={(event) => setStudentCode(event.target.value)}
                 placeholder="مثال: VIS-101"
                 dir="ltr"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono tracking-[0.2em] outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono tracking-[0.2em] outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
             </label>
           </div>
@@ -332,15 +332,15 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
       >
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
             <Layers3 className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">محتوى الإشعار</h2>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">محتوى الإشعار</h2>
+            <p className="text-sm font-bold text-slate-500 text-slate-500">
               هنربطه لاحقًا بجدول الإشعارات بعد ما يتجهز الـ backend.
             </p>
           </div>
@@ -348,23 +348,23 @@ export default function NotificationsPage() {
 
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           <label className="space-y-2">
-            <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">عنوان الإشعار</span>
+            <span className="block text-sm font-bold text-slate-700 text-slate-700">عنوان الإشعار</span>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="مثال: تنبيه هام بخصوص الحضور"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
             />
           </label>
 
           <label className="space-y-2">
-            <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">نص الإشعار</span>
+            <span className="block text-sm font-bold text-slate-700 text-slate-700">نص الإشعار</span>
             <textarea
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder="اكتب محتوى الإشعار هنا..."
               rows={4}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
             />
           </label>
         </div>
@@ -374,21 +374,21 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.15 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
               <School2 className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">سجل الإشعارات</h2>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">سجل الإشعارات</h2>
+              <p className="text-sm font-bold text-slate-500 text-slate-500">
                 لسه مفيش بيانات مرسلة، فإحنا مستنيين الربط الحقيقي.
               </p>
             </div>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 bg-slate-50 text-slate-700">
             EMPTY FEED
           </span>
         </div>

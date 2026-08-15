@@ -277,12 +277,12 @@ export default function UsersPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة الطلاب</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة الطلاب</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
               إضافة طالب، تعديل بياناته، حذف الحساب، وتوليد كود VIS تلقائياً.
             </p>
           </div>
@@ -292,22 +292,22 @@ export default function UsersPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="بحث بالاسم أو الكود أو الهاتف"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
             />
           </div>
         </div>
       </motion.div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
             <Plus className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">
+            <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">
               {editingId ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
             </h2>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-bold text-slate-500 text-slate-500">
               كود الطالب بيتولد تلقائياً من VIS- ويثبت بعد الإنشاء.
             </p>
           </div>
@@ -330,32 +330,32 @@ export default function UsersPage() {
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             placeholder="اسم الطالب"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
             value={form.phone}
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
             value={form.subjects}
             onChange={(event) => setForm((current) => ({ ...current, subjects: event.target.value }))}
             placeholder="المواد المخصصة للطالب (مفصولة بفاصلة ,)"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="كلمة مرور اختيارية"
             type="password"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <select
             value={form.stage}
             onChange={(event) => handleStageChange(event.target.value as StudentStage)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           >
             <option value="primary">الابتدائية</option>
             <option value="prep">الإعدادية</option>
@@ -364,7 +364,7 @@ export default function UsersPage() {
           <select
             value={form.grade}
             onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value, track: "" }))}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           >
             <option value="">الصف</option>
             {stageGrades[form.stage].map((grade) => (
@@ -393,7 +393,7 @@ export default function UsersPage() {
                 className={`w-full rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
                   form.track === track
                     ? "border-[#0A2540] bg-[#0A2540] text-white dark:border-[#D4AF37] dark:bg-[#D4AF37] dark:text-[#0A2540]"
-                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                    : "border-slate-200 bg-slate-50 text-slate-600 border-slate-200 bg-white text-slate-700"
                 }`}
               >
                 {trackLabels[track]}
@@ -403,11 +403,11 @@ export default function UsersPage() {
         ) : null}
 
         {selectedStudent ? (
-          <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+          <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 border-slate-200 bg-slate-50">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-extrabold text-[#0A2540] dark:text-white">{selectedStudent.name}</h3>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{selectedStudent.phone}</p>
+                <h3 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{selectedStudent.name}</h3>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">{selectedStudent.phone}</p>
               </div>
               <button
                 type="button"
@@ -418,13 +418,13 @@ export default function UsersPage() {
               </button>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl bg-white p-3 text-sm font-bold dark:bg-black/20">
+              <div className="rounded-2xl bg-white p-3 text-sm font-bold bg-white">
                 الكود: {selectedStudent.student_code ?? "VIS-0000"}
               </div>
-              <div className="rounded-2xl bg-white p-3 text-sm font-bold dark:bg-black/20">
+              <div className="rounded-2xl bg-white p-3 text-sm font-bold bg-white">
                 المرحلة: {selectedStudent.stage ?? "-"}
               </div>
-              <div className="rounded-2xl bg-white p-3 text-sm font-bold dark:bg-black/20">
+              <div className="rounded-2xl bg-white p-3 text-sm font-bold bg-white">
                 الصف: {selectedStudent.grade ?? "-"}
               </div>
             </div>
@@ -436,7 +436,7 @@ export default function UsersPage() {
             <button
               type="button"
               onClick={resetForm}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 text-slate-700 sm:w-auto"
             >
               إلغاء التعديل
             </button>
@@ -451,10 +451,10 @@ export default function UsersPage() {
           description="أضف أول طالب من النموذج بالأعلى، وبعدها هنقدر نعدل بياناته أو نحذفه أو نبحث عنه بسهولة."
         />
       ) : (
-        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full text-right">
-              <thead className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-300">
+              <thead className="bg-slate-50 text-slate-500 bg-slate-50 text-slate-700">
                 <tr>
                   <th className="px-4 py-3 text-sm font-bold">الكود</th>
                   <th className="px-4 py-3 text-sm font-bold">الاسم</th>
@@ -464,24 +464,24 @@ export default function UsersPage() {
                   <th className="px-4 py-3 text-sm font-bold text-left">إجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+              <tbody className="divide-y divide-slate-200 divide-slate-200">
                 {filteredStudents.map((student) => (
                   <tr key={student.id ?? student.phone}>
                     <td className="px-4 py-4 font-mono text-sm font-bold tracking-[0.2em] text-[#0A2540] dark:text-[#D4AF37]">
                       {student.student_code ?? "VIS-0000"}
                     </td>
-                    <td className="px-4 py-4 font-bold text-[#0A2540] dark:text-white">{student.name}</td>
-                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 dark:text-slate-300">
+                    <td className="px-4 py-4 font-bold text-[#0A2540] text-[#0A2540]">{student.name}</td>
+                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">
                       {student.phone}
                     </td>
-                    <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">
                       {student.stage === "primary"
                         ? "ابتدائية"
                         : student.stage === "prep"
                           ? "إعدادية"
                           : "ثانوية"}
                     </td>
-                    <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">
+                    <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">
                       {student.grade}
                       {student.track ? ` - ${trackLabels[student.track as Exclude<SecondaryTrack, "">]}` : ""}
                     </td>
@@ -492,7 +492,7 @@ export default function UsersPage() {
                           onClick={() => startEdit(student)}
                           disabled={memberActionLoading === student.id}
                           className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-slate-600 transition-colors ${
-                            memberActionLoading === student.id ? "border-slate-200 bg-slate-100 cursor-wait opacity-70" : "border-slate-200 bg-slate-50 hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                            memberActionLoading === student.id ? "border-slate-200 bg-slate-100 cursor-wait opacity-70" : "border-slate-200 bg-slate-50 hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 bg-white text-slate-700"
                           }`}
                         >
                           <Edit3 className="h-4 w-4" />
@@ -532,16 +532,16 @@ export default function UsersPage() {
 
       {isEditModalOpen && editingId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-800/40 p-4">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 border-slate-200 dark:bg-[#0A2540]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات الطالب</h2>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">عدّل البيانات ثم احفظ التغييرات لتحديث السجل فورًا.</p>
+                <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">تعديل بيانات الطالب</h2>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">عدّل البيانات ثم احفظ التغييرات لتحديث السجل فورًا.</p>
               </div>
               <button
                 type="button"
                 onClick={resetForm}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 sm:w-auto dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 sm:w-auto border-slate-200 bg-slate-50 text-slate-700"
               >
                 إغلاق
               </button>
@@ -552,32 +552,32 @@ export default function UsersPage() {
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                 placeholder="اسم الطالب"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
               <input
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="010XXXXXXXX"
                 dir="ltr"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
               <input
             value={form.subjects}
             onChange={(event) => setForm((current) => ({ ...current, subjects: event.target.value }))}
             placeholder="المواد المخصصة للطالب (مفصولة بفاصلة ,)"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="كلمة مرور اختيارية"
                 type="password"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
               <select
                 value={form.stage}
                 onChange={(event) => handleStageChange(event.target.value as StudentStage)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               >
                 <option value="primary">الابتدائية</option>
                 <option value="prep">الإعدادية</option>
@@ -586,7 +586,7 @@ export default function UsersPage() {
               <select
                 value={form.grade}
                 onChange={(event) => setForm((current) => ({ ...current, grade: event.target.value, track: "" }))}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               >
                 <option value="">الصف</option>
                 {stageGrades[form.stage].map((grade) => (
@@ -606,7 +606,7 @@ export default function UsersPage() {
                         className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
                           form.track === track
                             ? "border-[#0A2540] bg-[#0A2540] text-white dark:border-[#D4AF37] dark:bg-[#D4AF37] dark:text-[#0A2540]"
-                            : "border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-black/20 dark:text-slate-300"
+                            : "border-slate-200 bg-slate-50 text-slate-600 border-slate-200 bg-white text-slate-700"
                         }`}
                       >
                         {trackLabels[track]}
@@ -620,7 +620,7 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300"
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 text-slate-700"
                 >
                   إلغاء
                 </button>

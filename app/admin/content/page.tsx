@@ -29,15 +29,15 @@ export default function ContentPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
       >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
             <FileText className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة المحتوى</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة المحتوى</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
               رفع الملفات والمذكرات سيتصل لاحقاً بالـ API بدون بيانات وهمية.
             </p>
           </div>
@@ -45,7 +45,7 @@ export default function ContentPage() {
       </motion.div>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
           <EmptyState
             icon={CircleDashed}
             title="لا توجد ملفات منشورة حالياً"
@@ -53,20 +53,20 @@ export default function ContentPage() {
           />
         </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
               <Upload className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">رفع ملف جديد</h2>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">رفع ملف جديد</h2>
+              <p className="text-sm font-bold text-slate-500 text-slate-500">
                 الواجهة جاهزة للربط مع التخزين.
               </p>
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-white/10 dark:bg-white/5">
+          <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-center border-slate-200 bg-slate-50">
             <input
               ref={fileInputRef}
               type="file"
@@ -86,13 +86,13 @@ export default function ContentPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex min-h-[8rem] w-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-white dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+              className="inline-flex min-h-[8rem] w-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-white bg-slate-50 text-slate-700 dark:hover:bg-white/10"
             >
               <div>
                 <p className="mb-3">اسحب الملف هنا أو اختر من الجهاز</p>
                 <p className="text-xs font-medium text-slate-400">PWA ready • Mobile first</p>
                 {selectedFileName ? (
-                  <p className="mt-4 text-sm text-slate-700 dark:text-white">الملف المحدد: {selectedFileName}</p>
+                  <p className="mt-4 text-sm text-slate-700 text-[#0A2540]">الملف المحدد: {selectedFileName}</p>
                 ) : null}
               </div>
             </button>
@@ -100,7 +100,7 @@ export default function ContentPage() {
           <button
             type="button"
             disabled
-            className="mt-4 inline-flex w-full items-center justify-center rounded-[1.5rem] border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:bg-white/10 dark:text-slate-300"
+            className="mt-4 inline-flex w-full items-center justify-center rounded-[1.5rem] border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500 disabled:cursor-not-allowed disabled:opacity-70 border-slate-200 bg-slate-100 text-slate-700"
           >
             رفع الملف غير مفعل بعد
           </button>

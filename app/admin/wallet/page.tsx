@@ -173,15 +173,15 @@ export default function WalletPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40 lg:flex-row lg:items-center lg:justify-between"
+        className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm lg:flex-row lg:items-center lg:justify-between"
       >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
             <Wallet className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">المحفظة والماليات</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">المحفظة والماليات</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
               شحن رصيد الطالب، متابعة السجل، وإدارة فتح/غلق التسجيل.
             </p>
           </div>
@@ -228,7 +228,7 @@ export default function WalletPage() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-3 rounded-[2rem] border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+      <div className="flex flex-wrap gap-3 rounded-[2rem] border border-slate-200 bg-white p-2 shadow-sm border-slate-200 bg-white shadow-sm">
         {[
           { id: "CHARGE", label: "شحن رصيد" },
           { id: "LEDGER", label: "السجل المالي" },
@@ -241,7 +241,7 @@ export default function WalletPage() {
             className={`rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
               activeTab === item.id
                 ? "bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]"
-                : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
+                : "text-slate-500 hover:text-slate-700 text-slate-700"
             }`}
           >
             {item.label}
@@ -254,15 +254,15 @@ export default function WalletPage() {
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
           >
             <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
                 <PlusCircle className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">شحن رصيد الطالب</h2>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">شحن رصيد الطالب</h2>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">
                   الصفحة مخصصة لشحن الطالب فقط، بدون اختيار موظف أو ولي أمر.
                 </p>
               </div>
@@ -270,41 +270,41 @@ export default function WalletPage() {
 
             <form onSubmit={handleCharge} className="grid gap-4">
               <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">اسم الطالب أو رقم ولي الأمر</span>
+                <span className="text-sm font-bold text-slate-700 text-slate-700">اسم الطالب أو رقم ولي الأمر</span>
                 <input
                   value={chargeOwner}
                   onChange={(event) => setChargeOwner(event.target.value)}
                   placeholder="اسم الطالب أو رقم ولي الأمر"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
                 />
               </label>
 
               <div className="space-y-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">النوع</span>
+                <span className="text-sm font-bold text-slate-700 text-slate-700">النوع</span>
                 <div className="rounded-xl border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-3 text-sm font-black text-[#0A2540] dark:text-[#D4AF37]">
                   طالب فقط
                 </div>
               </div>
 
               <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">المبلغ</span>
+                <span className="text-sm font-bold text-slate-700 text-slate-700">المبلغ</span>
                 <input
                   value={chargeAmount}
                   onChange={(event) => setChargeAmount(event.target.value)}
                   type="number"
                   min="1"
                   placeholder="0"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
                 />
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">سبب الحركة</span>
+                <span className="text-sm font-bold text-slate-700 text-slate-700">سبب الحركة</span>
                 <input
                   value={chargeReason}
                   onChange={(event) => setChargeReason(event.target.value)}
                   placeholder="شحن، خصم، تسوية ..."
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
                 />
               </label>
 
@@ -333,15 +333,15 @@ export default function WalletPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+            className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
           >
             <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
                 <History className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">أحدث الحركات</h2>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">أي حركة جديدة هتظهر هنا فوراً.</p>
+                <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">أحدث الحركات</h2>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">أي حركة جديدة هتظهر هنا فوراً.</p>
               </div>
             </div>
 
@@ -354,20 +354,20 @@ export default function WalletPage() {
             ) : (
               <div className="space-y-3">
                 {entries.map((entry) => (
-                  <div key={entry.id ?? `${entry.owner}-${entry.created_at}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/5">
+                  <div key={entry.id ?? `${entry.owner}-${entry.created_at}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 border-slate-200 bg-slate-50">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="font-bold text-[#0A2540] dark:text-white">{entry.owner}</p>
-                        <p className="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                        <p className="font-bold text-[#0A2540] text-[#0A2540]">{entry.owner}</p>
+                        <p className="mt-1 text-xs font-bold text-slate-500 text-slate-500">
                           {entry.created_at ? new Date(entry.created_at).toLocaleString("ar-EG") : ""}
                         </p>
                       </div>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#0A2540] dark:bg-[#0A2540] dark:text-white">
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#0A2540] dark:bg-[#0A2540] text-[#0A2540]">
                         {entry.account_type}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">{entry.reason}</p>
-                    <p className="mt-3 text-lg font-black text-[#0A2540] dark:text-white">
+                    <p className="mt-3 text-sm font-medium text-slate-500 text-slate-500">{entry.reason}</p>
+                    <p className="mt-3 text-lg font-black text-[#0A2540] text-[#0A2540]">
                       {entry.amount} <span className="text-sm font-bold text-slate-400">ج.م</span>
                     </p>
                   </div>
@@ -380,15 +380,15 @@ export default function WalletPage() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
+          className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
         >
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
               <Search className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">السجل المالي للطالب</h2>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">السجل المالي للطالب</h2>
+              <p className="text-sm font-bold text-slate-500 text-slate-500">
                 ابحث بالكود أو رقم الموبايل، والنتائج هتتربط لاحقاً بقاعدة البيانات.
               </p>
             </div>
@@ -399,7 +399,7 @@ export default function WalletPage() {
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
               placeholder="مثال: VIS-101 أو 010XXXXXXXX"
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
             />
             <button
               type="submit"
@@ -411,7 +411,7 @@ export default function WalletPage() {
               type="button"
               onClick={clearSearch}
               disabled={!searchDraft && !searchCode}
-              className="rounded-xl border border-slate-200 px-5 py-3 font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-300"
+              className="rounded-xl border border-slate-200 px-5 py-3 font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] disabled:cursor-not-allowed disabled:opacity-50 border-slate-200 text-slate-700"
             >
               مسح
             </button>
@@ -439,20 +439,20 @@ export default function WalletPage() {
           animate={{ opacity: 1, y: 0 }}
           className="grid gap-6 lg:grid-cols-3"
         >
-          <div className="rounded-[2rem] border border-slate-200 bg-[#0A2540] p-6 text-white shadow-sm lg:col-span-1 dark:border-white/10">
+          <div className="rounded-[2rem] border border-slate-200 bg-[#0A2540] p-6 text-white shadow-sm lg:col-span-1 border-slate-200">
             <p className="text-sm font-bold text-white/60">إجمالي الشحنات</p>
             <p className="mt-2 text-4xl font-black">{settlementPreview.gross}</p>
             <p className="mt-2 text-sm font-medium text-white/70">قيمة العمليات المسجلة الآن</p>
           </div>
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">نسبة المدرس</p>
-            <p className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">60%</p>
-            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">تنفع تتعدل من غرفة العمليات.</p>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
+            <p className="text-sm font-bold text-slate-500 text-slate-500">نسبة المدرس</p>
+            <p className="mt-2 text-3xl font-black text-[#0A2540] text-[#0A2540]">60%</p>
+            <p className="mt-2 text-sm font-medium text-slate-500 text-slate-500">تنفع تتعدل من غرفة العمليات.</p>
           </div>
-          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">التقفيل الآلي</p>
-            <p className="mt-2 text-3xl font-black text-[#0A2540] dark:text-white">{settlementPreview.centerShare}</p>
-            <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">حصة السنتر التقديرية من العمليات الحالية.</p>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
+            <p className="text-sm font-bold text-slate-500 text-slate-500">التقفيل الآلي</p>
+            <p className="mt-2 text-3xl font-black text-[#0A2540] text-[#0A2540]">{settlementPreview.centerShare}</p>
+            <p className="mt-2 text-sm font-medium text-slate-500 text-slate-500">حصة السنتر التقديرية من العمليات الحالية.</p>
           </div>
         </motion.section>
       )}

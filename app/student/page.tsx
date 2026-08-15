@@ -7,7 +7,7 @@ import EmptyState from "@/components/admin/EmptyState";
 
 export default function StudentHomePage() {
   return (
-    <div className="flex min-h-screen flex-col gap-6 bg-slate-50 px-4 py-6 pb-24 dark:bg-slate-950" dir="rtl">
+    <div className="flex min-h-screen flex-col gap-6 bg-slate-50 px-4 py-6 pb-24 bg-slate-50" dir="rtl">
       <motion.header
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
