@@ -13,8 +13,8 @@ export async function POST(request: Request) {
   };
 
   const configuredAccessCode = process.env.MASTER_ADMIN_ACCESS_CODE ?? process.env.NEXT_PUBLIC_MASTER_ADMIN_ACCESS_CODE ?? "";
-  const normalizedPhone = normalizeEgyptianPhone(body.phone ?? "");
-  const rawPhone = (body.phone ?? "").trim();
+  const rawPhone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const normalizedPhone = normalizeEgyptianPhone(rawPhone);
   console.log("[admin-sign-in] attempt", {
     expectedRole: body.expectedRole,
     phone: rawPhone,
@@ -49,11 +49,23 @@ export async function POST(request: Request) {
 
     loginResult = await supabase.auth.signInWithPassword({ email: masterAdminEmail, password: masterAdminPassword });
   } else {
-    const password = body.password ?? "";
-    const normalizedPhoneValue = normalizedPhone ?? "";
-    const phoneDigits = normalizedPhoneValue.replace(/\D/g, "");
-    const candidatePhones = Array.from(new Set([normalizedPhoneValue, rawPhone].filter((value): value is string => Boolean(value))));
-    const candidateEmails = phoneDigits ? [`${phoneDigits}@vision.local`] : [];
+    const password = typeof body.password === "string" ? body.password : "";
+    let localPart = "";
+    const rawDigits = rawPhone.replace(/\D/g, "");
+    if (rawDigits.startsWith("20")) localPart = rawDigits.slice(2);
+    else if (rawDigits.startsWith("0")) localPart = rawDigits.slice(1);
+    else localPart = rawDigits;
+
+    const candidatePhones = Array.from(
+      new Set([
+        normalizedPhone,
+        `0${localPart}`,
+        `+20${localPart}`,
+        `20${localPart}`,
+        rawPhone,
+      ].filter((value): value is string => Boolean(value))),
+    );
+    const candidateEmails = localPart ? [`0${localPart}@vision-center.com`, `20${localPart}@vision-center.com`] : [];
 
     if (candidatePhones.length === 0 || password.length < 8) {
       return attachBufferedCookies(NextResponse.json({ error: "بيانات الدخول غير صحيحة" }, { status: 400 }));

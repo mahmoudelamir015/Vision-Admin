@@ -16,6 +16,7 @@ type StudentForm = {
   stage: StudentStage;
   grade: string;
   track: SecondaryTrack;
+  subjects: string;
 };
 
 const stageGrades: Record<StudentStage, string[]> = {
@@ -43,6 +44,7 @@ const emptyForm: StudentForm = {
   stage: "secondary",
   grade: "",
   track: "",
+  subjects: "",
 };
 
 export default function UsersPage() {
@@ -148,6 +150,7 @@ export default function UsersPage() {
         stage: form.stage,
         grade: form.grade,
         track: form.stage === "secondary" ? form.track : "",
+        subjects: form.subjects.split(",").map(s=>s.trim()).filter(Boolean),
         student_code: currentStudent?.student_code ?? `VIS-${String(nextCode).padStart(4, "0")}`,
       };
       if (password.trim().length >= 8) {
@@ -264,6 +267,7 @@ export default function UsersPage() {
       stage: (student.stage as StudentStage) || "secondary",
       grade: student.grade ?? "",
       track: (student.track as SecondaryTrack) || "",
+      subjects: (student.subjects ?? []).join(", "),
     });
     setPassword("");
   };
@@ -333,6 +337,12 @@ export default function UsersPage() {
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+          />
+          <input
+            value={form.subjects}
+            onChange={(event) => setForm((current) => ({ ...current, subjects: event.target.value }))}
+            placeholder="المواد المخصصة للطالب (مفصولة بفاصلة ,)"
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
@@ -441,7 +451,7 @@ export default function UsersPage() {
           description="أضف أول طالب من النموذج بالأعلى، وبعدها هنقدر نعدل بياناته أو نحذفه أو نبحث عنه بسهولة."
         />
       ) : (
-        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="overflow-x-auto">
             <table className="min-w-full text-right">
               <thead className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-300">
@@ -521,7 +531,7 @@ export default function UsersPage() {
       )}
 
       {isEditModalOpen && editingId ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-800/40 p-4">
           <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -552,9 +562,15 @@ export default function UsersPage() {
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="كلمة مرور اختيارية"
+            value={form.subjects}
+            onChange={(event) => setForm((current) => ({ ...current, subjects: event.target.value }))}
+            placeholder="المواد المخصصة للطالب (مفصولة بفاصلة ,)"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
+          />
+          <input
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="كلمة مرور اختيارية"
                 type="password"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />

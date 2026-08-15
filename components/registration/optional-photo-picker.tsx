@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
 import { motion } from "motion/react";
 import { Camera, Upload, X } from "lucide-react";
 
@@ -76,7 +75,7 @@ export function OptionalPhotoPicker({ label, description, fileName, previewUrl, 
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
           <div className="flex items-center gap-3">
             <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white">
-              <Image src={previewUrl} alt="Preview" fill sizes="56px" className="object-cover" />
+              <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-700">

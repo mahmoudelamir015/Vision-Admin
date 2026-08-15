@@ -160,8 +160,27 @@ export default function OperationsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
       >
-        <h1 className="text-xl font-extrabold text-[#0A2540] sm:text-2xl">غرفة العمليات</h1>
-        <p className="mt-1 text-sm font-bold text-slate-500">تدفق حي لآخر الأحداث في النظام.</p>
+        <div className="flex items-center justify-between w-full">
+            <div>
+              <h1 className="text-xl font-extrabold text-[#0A2540] sm:text-2xl">غرفة العمليات</h1>
+              <p className="mt-1 text-sm font-bold text-slate-500">تدفق حي لآخر الأحداث في النظام.</p>
+            </div>
+            {user?.role === "master_admin" ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (confirm("هل أنت متأكد من حذف جميع السجلات؟")) {
+                    await fetch("/api/admin/operations", { method: "DELETE" });
+                    window.location.reload();
+                  }
+                }}
+                className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors"
+                title="تفريغ الحضور والمحفظة"
+              >
+                حذف السجلات
+              </button>
+            ) : null}
+         </div>
 
         <div className="mt-6 grid gap-3">
           {rendered.map((it) => (

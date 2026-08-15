@@ -63,10 +63,7 @@ export default function ScannerPage() {
       return;
     }
 
-    if (!token) {
-      setMessage("امسح QR الأول");
-      return;
-    }
+    /* QR is optional */
 
     if (pin.trim().length < 4) {
       setMessage("اكتب الـ PIN المختصر");
@@ -175,7 +172,7 @@ export default function ScannerPage() {
                   </label>
 
                   <label className="block text-sm font-bold text-slate-600">
-                    نص الـ QR
+                    نص الـ QR (اختياري)
                     <textarea
                       value={token}
                       onChange={(event) => setToken(event.target.value.trim())}

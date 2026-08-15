@@ -109,7 +109,7 @@ export default function TeachersPage() {
           .map((item) => item.trim())
           .filter(Boolean),
         password: form.password.trim() || undefined,
-        profile_image: teacherPhotoName ?? undefined,
+        profile_image: teacherPhotoPreview ?? undefined,
         active: true,
       });
 
@@ -191,7 +191,7 @@ export default function TeachersPage() {
     setEditingId(teacher.id ?? null);
     setSelectedTeacherId(teacher.id ?? null);
     setIsEditModalOpen(true);
-    setTeacherPhotoName(teacher.profile_image ?? null);
+    setTeacherPhotoName(teacher.profile_image ? "صورة المدرس" : null);
     setTeacherPhotoPreview(teacher.profile_image ?? null);
     setForm({
       name: teacher.name,
@@ -302,7 +302,7 @@ export default function TeachersPage() {
       </section>
 
       {isEditModalOpen && editingId ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-800/40 p-4">
           <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -395,7 +395,7 @@ export default function TeachersPage() {
           description="أضف أول مدرس من النموذج بالأعلى، ثم يمكنك التعديل أو الحذف من القائمة."
         />
       ) : (
-        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="overflow-x-auto">
             <table className="min-w-full text-right">
               <thead className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-300">
@@ -410,7 +410,18 @@ export default function TeachersPage() {
               <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                 {teachers.map((teacher) => (
                   <tr key={teacher.id ?? teacher.phone}>
-                    <td className="px-4 py-4 font-bold text-[#0A2540] dark:text-white">{teacher.name}</td>
+                    <td className="px-4 py-4 flex items-center gap-3 font-bold text-[#0A2540] dark:text-white">
+                      {teacher.profile_image ? (
+                        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-slate-200">
+                          <img src={teacher.profile_image} alt={teacher.name} className="h-full w-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                          <Users className="h-5 w-5" />
+                        </div>
+                      )}
+                      {teacher.name}
+                    </td>
                     <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 dark:text-slate-300">{teacher.phone}</td>
                     <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">{stageLabels[teacher.stage as TeacherStage] ?? "-"}</td>
                     <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">{teacher.school_name ?? "-"}</td>

@@ -45,7 +45,7 @@ export default function AdminLayout({
 
           {!isLogin && isMobileMenuOpen ? (
             <div
-              className="fixed inset-0 z-40 bg-[#0A2540]/50 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-40 bg-slate-800/40 lg:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
           ) : null}

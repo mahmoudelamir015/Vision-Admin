@@ -10,7 +10,8 @@ export async function POST(request: Request) {
     if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
     const body = (await request.json().catch(() => null)) as { shared?: boolean; student_phone?: string; valid_for_seconds?: number } | null;
-    const supabase = createRouteSupabaseClient(await cookies());
+    const { createServiceSupabaseClient } = await import("@/src/lib/supabase/admin");
+    const supabase = createServiceSupabaseClient();
 
     if (body?.shared) {
       const { data, error } = await supabase.rpc("issue_shared_attendance_token", {
