@@ -57,17 +57,15 @@ const switchMeta: Array<{
 ];
 
 const quickActions = [
-  { title: "غرفة الحضور", href: "/admin/attendance", icon: QrCode },
   { title: "المحفظة", href: "/admin/wallet", icon: Wallet },
   { title: "إدارة المدرسين", href: "/admin/teachers", icon: GraduationCap },
-  { title: "إدارة الموظفين", href: "/admin/staff", icon: Users },
+  { title: "إدارة الطلاب", href: "/admin/users", icon: Users },
   { title: "الخزنة", href: "/admin/vault", icon: Banknote },
 ];
 
 const editDataActions = [
   { title: "تعديل بيانات الطلاب", href: "/admin/users" },
   { title: "تعديل بيانات المعلمين", href: "/admin/teachers" },
-  { title: "تعديل بيانات الموظفين", href: "/admin/staff" },
 ];
 
 const defaultSwitches: Record<SystemSwitchKey, boolean> = {
@@ -432,151 +430,6 @@ export default function AdminControlRoomPage() {
                 {isLoadingSettings ? "جارٍ تحميل الإعدادات..." : "تم تحميل الإعدادات من Supabase"}
               </span>
               {settingsError ? <span className="text-red-500 dark:text-red-300">{settingsError}</span> : null}
-            </div>
-          </section>
-
-          <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة الموظفين</h2>
-                  <p className="text-sm font-bold text-slate-500 text-slate-500">إضافة موظف برقم موبايله، تعديل الصلاحية، والحذف عند الحاجة.</p>
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={addStaffMember} className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_1fr_auto]">
-              <input
-                value={staffName}
-                onChange={(event) => setStaffName(event.target.value)}
-                placeholder="اسم الموظف"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 font-bold outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10"
-              />
-              <input
-                value={staffPhone}
-                onChange={(event) => setStaffPhone(event.target.value)}
-                placeholder="010XXXXXXXX"
-                dir="ltr"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 font-bold outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10"
-              />
-              <input
-                value={staffPassword}
-                onChange={(event) => setStaffPassword(event.target.value)}
-                placeholder="كلمة مرور اختيارية"
-                type="password"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 font-bold outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10"
-              />
-              <select
-                value={staffPermission}
-                onChange={(event) => setStaffPermission(event.target.value as StaffPermission)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 font-bold outline-none transition-all focus:border-[#D4AF37] focus:ring-4 focus:ring-[#D4AF37]/10"
-              >
-                <option value="attendance">الحضور</option>
-                <option value="wallet">المحفظة</option>
-                <option value="operations">العمليات</option>
-                <option value="manage_teachers">إدارة المدرسين</option>
-              </select>
-              <button
-                type="submit"
-                disabled={isStaffSaving}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A2540] px-5 py-3 font-bold text-white transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-[#123B66] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <Plus className="h-4 w-4 text-[#D4AF37]" />
-                {isStaffSaving ? "جاري الإضافة..." : "إضافة"}
-              </button>
-            </form>
-            {staffFormFeedback ? (
-              <div
-                className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
-                  staffFormFeedback.type === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-red-200 bg-red-50 text-red-700"
-                }`}
-              >
-                {staffFormFeedback.message}
-              </div>
-            ) : null}
-
-            <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-slate-200 shadow-sm">
-              {staff.length === 0 ? (
-                <div className="bg-slate-50 p-6">
-                  <EmptyState
-                    icon={CircleDashed}
-                    title="لا يوجد موظفون بعد"
-                    description="أضف أول موظف من النموذج بالأعلى، وبعدها هنقدر نعدل الصلاحيات أو نوقف الحساب من هنا."
-                  />
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-right">
-                    <thead className="bg-slate-100 text-slate-700">
-                      <tr>
-                        <th className="px-4 py-3 text-sm font-bold">الاسم</th>
-                        <th className="px-4 py-3 text-sm font-bold">الموبايل</th>
-                        <th className="px-4 py-3 text-sm font-bold">الصلاحية</th>
-                        <th className="px-4 py-3 text-sm font-bold">الحالة</th>
-                        <th className="px-4 py-3 text-sm font-bold text-left">إجراء</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
-                      {staff.map((member) => (
-                        <tr key={member.id ?? member.phone} className="bg-white hover:bg-slate-50 transition-colors">
-                          <td className="px-4 py-4 font-bold text-[#0A2540]">{member.name}</td>
-                          <td className="px-4 py-4 font-mono text-sm font-bold text-slate-600">{member.phone?.replace(/^\\+?20/, '0')}</td>
-                          <td className="px-4 py-4">
-                            <select
-                              value={(member.permissions?.[0] as StaffPermission) ?? "attendance"}
-                              onChange={(event) =>
-                                void updateStaffMember(member, { permissions: [event.target.value as StaffPermission] })
-                              }
-                              disabled={memberActionLoading === member.id}
-                              className={`rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-[#D4AF37] ${
-                                memberActionLoading === member.id ? "cursor-wait opacity-70" : ""
-                              }`}
-                            >
-                              <option value="attendance">الحضور</option>
-                              <option value="wallet">المحفظة</option>
-                              <option value="operations">العمليات</option>
-                            </select>
-                          </td>
-                          <td className="px-4 py-4">
-                            <button
-                              type="button"
-                              onClick={() => void updateStaffMember(member, { active: !member.active })}
-                            disabled={memberActionLoading === member.id}
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-black ${
-                              memberActionLoading === member.id
-                                ? "bg-slate-100 text-slate-400 cursor-wait opacity-70"
-                                : member.active
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {member.active ? "نشط" : "موقوف"}
-                            </button>
-                          </td>
-                          <td className="px-4 py-4 text-left">
-                            <button
-                              type="button"
-                              onClick={() => void handleDeleteStaff(member)}
-                            disabled={memberActionLoading === member.id}
-                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold text-red-600 transition-all duration-300 hover:scale-105 ${
-                              memberActionLoading === member.id ? "border-red-200 bg-red-100 cursor-wait opacity-70" : "border-red-200 bg-red-50 hover:bg-red-100"
-                            }`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {memberActionLoading === member.id ? "جارٍ الحذف..." : "حذف"}
-                          </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
           </section>
 
