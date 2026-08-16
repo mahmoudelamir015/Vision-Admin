@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       .from("attendance")
       .insert({
         student_name: student.name,
-        student_phone: student.phone,
+        student_phone: student.phone?.replace(/^\\+?20/, '0'),
         stage: student.stage,
         grade: student.grade,
         track: student.track,

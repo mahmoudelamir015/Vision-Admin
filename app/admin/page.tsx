@@ -525,7 +525,7 @@ export default function AdminControlRoomPage() {
                       {staff.map((member) => (
                         <tr key={member.id ?? member.phone} className="bg-white hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-4 font-bold text-[#0A2540]">{member.name}</td>
-                          <td className="px-4 py-4 font-mono text-sm font-bold text-slate-600">{member.phone}</td>
+                          <td className="px-4 py-4 font-mono text-sm font-bold text-slate-600">{member.phone?.replace(/^\\+?20/, '0')}</td>
                           <td className="px-4 py-4">
                             <select
                               value={(member.permissions?.[0] as StaffPermission) ?? "attendance"}

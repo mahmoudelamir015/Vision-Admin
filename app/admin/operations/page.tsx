@@ -114,7 +114,7 @@ export default function OperationsPage() {
             id: `usr-${u.id ?? u.phone}`,
             type: "user",
             title: u.name,
-            subtitle: `${u.role} - ${u.phone}`,
+            subtitle: `${u.role} - ${u.phone?.replace(/^\\+?20/, '0')}`,
             created_at: (u as AppUserRecord & { created_at?: string }).created_at,
           }),
         );
@@ -131,7 +131,10 @@ export default function OperationsPage() {
     };
   }, [isAllowed]);
 
-  const rendered = useMemo(() => items.slice(0, 200), [items]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+  const totalPages = Math.ceil(items.length / pageSize);
+  const rendered = useMemo(() => items.slice((currentPage - 1) * pageSize, currentPage * pageSize), [items, currentPage]);
 
   if (!isAllowed) {
     return (
@@ -182,25 +185,60 @@ export default function OperationsPage() {
             ) : null}
          </div>
 
-        <div className="mt-6 grid gap-3">
-          {rendered.map((it) => (
-            <motion.div
-              key={it.id}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
-              className="rounded-2xl border bg-slate-50 p-3 sm:p-4"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                <div>
-                  <div className="text-sm font-extrabold text-[#0A2540]">{it.title}</div>
-                  {it.subtitle ? <div className="mt-1 text-xs text-slate-500">{it.subtitle}</div> : null}
-                </div>
-                <div className="text-xs font-mono text-slate-400">{formatOperationDate(it.created_at)}</div>
-              </div>
-            </motion.div>
-          ))}
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-right">
+              <thead className="bg-slate-50 text-slate-700">
+                <tr>
+                  <th className="px-4 py-3 text-sm font-bold">النوع</th>
+                  <th className="px-4 py-3 text-sm font-bold">البيان</th>
+                  <th className="px-4 py-3 text-sm font-bold">التفاصيل</th>
+                  <th className="px-4 py-3 text-sm font-bold">الوقت</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {rendered.map((it) => (
+                  <tr key={it.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-bold">
+                      <span className={`inline-block px-2 py-1 rounded-lg text-xs ${
+                        it.type === 'attendance' ? 'bg-blue-100 text-blue-700' :
+                        it.type === 'wallet' ? 'bg-emerald-100 text-emerald-700' :
+                        'bg-purple-100 text-purple-700'
+                      }`}>
+                        {it.type === 'attendance' ? 'حضور' : it.type === 'wallet' ? 'محفظة' : 'مستخدم'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-extrabold text-[#0A2540]">{it.title}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{it.subtitle || "-"}</td>
+                    <td className="px-4 py-3 text-sm font-mono text-slate-500">{formatOperationDate(it.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 text-sm font-bold border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50"
+            >
+              السابق
+            </button>
+            <span className="text-sm font-bold text-slate-500">
+              صفحة {currentPage} من {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 text-sm font-bold border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50"
+            >
+              التالي
+            </button>
+          </div>
+        )}
       </motion.div>
     </div>
   );

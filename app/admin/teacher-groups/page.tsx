@@ -154,7 +154,7 @@ export default function TeacherGroupsPage() {
             >
               <option value="">اختر المدرس...</option>
               {teachers.map((t) => (
-                <option key={t.id} value={t.id}>{t.name} ({t.phone})</option>
+                <option key={t.id} value={t.id}>{t.name} ({t.phone?.replace(/^\\+?20/, '0')})</option>
               ))}
             </select>
 

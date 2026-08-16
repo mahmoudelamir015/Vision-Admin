@@ -91,7 +91,7 @@ function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserI
     auth_user_id: authUserId,
     name: payload.name,
     full_name: payload.name,
-    phone: payload.phone,
+    phone: payload.phone?.replace(/^\\+?20/, '0'),
     role: payload.role,
     permissions: payload.permissions,
     active: payload.active,
@@ -115,7 +115,12 @@ export async function GET(request: Request) {
   const supabase = createRouteSupabaseClient(await cookies());
   let query = supabase
     .from("users")
-    .select("id, auth_user_id, name, phone, role, permissions, active, stage, grade, track, school_name, parent_phone, subjects, student_code, extra");
+    .select(`
+      id, auth_user_id, name, phone, role, permissions, active, 
+      stage, grade, track, school_name, parent_phone, subjects, 
+      student_code, extra,
+      wallet_balances(balance)
+    `);
 
   if (role) {
     query = query.eq("role", role);
@@ -124,7 +129,12 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  return NextResponse.json({ users: Array.isArray(data) ? data : [] });
+  const mapped = (data || []).map((u: any) => ({
+    ...u,
+    wallet_balance: u.wallet_balances?.[0]?.balance ?? 0
+  }));
+
+  return NextResponse.json({ users: mapped });
 }
 
 export async function POST(request: Request) {
@@ -183,7 +193,7 @@ export async function POST(request: Request) {
             name: payload.name,
             full_name: payload.name,
             role: payload.role,
-            phone: payload.phone,
+            phone: payload.phone?.replace(/^\\+?20/, '0'),
             auth_email: authEmail,
             stage: payload.stage ?? null,
             grade: payload.grade ?? null,
@@ -257,7 +267,7 @@ export async function PATCH(request: Request) {
 
   if (shouldSyncAuthPhone) {
     const { error: authUpdateError } = await supabase.auth.admin.updateUserById(authUserId, {
-      phone: payload.phone,
+      phone: payload.phone ?? undefined,
       phone_confirm: true,
       user_metadata: {
         name: payload.name,
@@ -292,7 +302,7 @@ export async function PATCH(request: Request) {
   };
 
   const authUpdateOptions: Parameters<typeof supabase.auth.admin.updateUserById>[1] = {
-    phone: payload.phone,
+    phone: payload.phone ?? undefined,
     phone_confirm: true,
     user_metadata: authUpdateAttributes,
   };
@@ -314,7 +324,7 @@ export async function PATCH(request: Request) {
       auth_user_id: authUserId,
       name: payload.name,
       full_name: payload.name,
-      phone: payload.phone,
+      phone: payload.phone?.replace(/^\\+?20/, '0'),
       role: payload.role,
       permissions: payload.permissions,
       active: payload.active,

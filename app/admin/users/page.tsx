@@ -263,7 +263,7 @@ export default function UsersPage() {
     setIsEditModalOpen(true);
     setForm({
       name: student.name,
-      phone: student.phone,
+      phone: student.phone?.replace(/^\\+?20/, '0'),
       stage: (student.stage as StudentStage) || "secondary",
       grade: student.grade ?? "",
       track: (student.track as SecondaryTrack) || "",
@@ -272,28 +272,60 @@ export default function UsersPage() {
     setPassword("");
   };
 
+  const handleExportCSV = () => {
+    if (filteredStudents.length === 0) return;
+    const header = ["الكود", "الاسم", "الهاتف", "المرحلة", "الصف", "المسار"];
+    const rows = filteredStudents.map(s => [
+      s.student_code || "VIS-0000",
+      s.name,
+      s.phone?.replace(/^\\+?20/, '0') || "",
+      s.stage === "primary" ? "ابتدائية" : s.stage === "prep" ? "إعدادية" : "ثانوية",
+      s.grade || "",
+      s.track ? trackLabels[s.track as Exclude<SecondaryTrack, "">] : ""
+    ]);
+
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }); // BOM for Arabic support
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `students_export_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="mx-auto flex h-full max-w-6xl flex-col gap-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة الطلاب</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
-              إضافة طالب، تعديل بياناته، حذف الحساب، وتوليد كود VIS تلقائياً.
+            <h1 className="text-2xl font-extrabold text-[#0A2540]">إدارة الطلاب</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500">
+              إضافة طالب، تعديل بياناته، تصدير البيانات (Excel/CSV)، وحذف الحساب.
             </p>
           </div>
-          <div className="relative lg:w-80">
-            <Search className="absolute right-4 top-3.5 h-5 w-5 text-slate-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="بحث بالاسم أو الكود أو الهاتف"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
-            />
+          <div className="flex items-center gap-3 relative lg:w-96">
+            <div className="relative w-full">
+              <Search className="absolute right-4 top-3.5 h-5 w-5 text-slate-400" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="بحث بالاسم، الكود، الهاتف"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 outline-none transition-colors focus:border-[#D4AF37]"
+              />
+            </div>
+            <button
+               onClick={handleExportCSV}
+               className="shrink-0 rounded-2xl bg-[#0A2540] px-4 py-3 text-sm font-bold text-white hover:bg-[#123B66] whitespace-nowrap"
+            >
+               تصدير إكسيل
+            </button>
           </div>
         </div>
       </motion.div>
@@ -333,7 +365,7 @@ export default function UsersPage() {
             className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
-            value={form.phone}
+            value={form.phone?.replace(/^\\+?20/, '0')}
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
@@ -407,7 +439,7 @@ export default function UsersPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{selectedStudent.name}</h3>
-                <p className="text-sm font-bold text-slate-500 text-slate-500">{selectedStudent.phone}</p>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">{selectedStudent.phone?.replace(/^\\+?20/, '0')}</p>
               </div>
               <button
                 type="button"
@@ -470,9 +502,18 @@ export default function UsersPage() {
                     <td className="px-4 py-4 font-mono text-sm font-bold tracking-[0.2em] text-[#0A2540] dark:text-[#D4AF37]">
                       {student.student_code ?? "VIS-0000"}
                     </td>
-                    <td className="px-4 py-4 font-bold text-[#0A2540] text-[#0A2540]">{student.name}</td>
+                    <td className="px-4 py-4 font-bold text-[#0A2540] text-[#0A2540]">
+                      <div className="flex items-center gap-2">
+                        {student.name}
+                        {typeof student.wallet_balance === 'number' && student.wallet_balance < 0 && (
+                          <span className="bg-rose-100 text-rose-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                            عليه مديونية {-student.wallet_balance} EGP
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">
-                      {student.phone}
+                      {student.phone?.replace(/^\\+?20/, '0')}
                     </td>
                     <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">
                       {student.stage === "primary"
@@ -555,7 +596,7 @@ export default function UsersPage() {
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
               <input
-                value={form.phone}
+                value={form.phone?.replace(/^\\+?20/, '0')}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="010XXXXXXXX"
                 dir="ltr"

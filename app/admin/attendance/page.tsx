@@ -337,7 +337,7 @@ export default function AttendancePage() {
                         <div key={student.id ?? student.phone} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                           <div>
                             <div className="text-sm font-extrabold text-[#0A2540]">{student.name}</div>
-                            <div className="text-xs font-bold text-slate-500">{student.phone} • {student.student_code ?? "-"}</div>
+                            <div className="text-xs font-bold text-slate-500">{student.phone?.replace(/^\\+?20/, '0')} • {student.student_code ?? "-"}</div>
                           </div>
                           <button
                             type="button"

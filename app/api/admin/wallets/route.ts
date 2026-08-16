@@ -31,10 +31,31 @@ export async function GET() {
   if (!profile) return NextResponse.json({ error: "غير مسجل" }, { status: 401 });
 
   const supabase = createRouteSupabaseClient(await cookies());
-  const { data, error } = await supabase.from("wallets").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(`
+      id, amount, type, reason, created_at,
+      users!transactions_user_id_fkey(name, phone, student_code),
+      employee:users!transactions_created_by_fkey(name, phone)
+    `)
+    .order("created_at", { ascending: false });
+
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  return NextResponse.json({ wallets: Array.isArray(data) ? data : [] });
+  const mappedData = data.map((t: any) => ({
+    id: t.id,
+    amount: t.type === 'debit' ? -t.amount : t.amount,
+    reason: t.reason,
+    created_at: t.created_at,
+    owner: t.users?.name || t.users?.phone || "غير معروف",
+    student_phone: t.users?.phone,
+    student_code: t.users?.student_code,
+    employee_name: t.employee?.name || "النظام",
+    employee_phone: t.employee?.phone,
+    account_type: "student",
+  }));
+
+  return NextResponse.json({ wallets: mappedData });
 }
 
 export async function POST(request: Request) {
@@ -43,25 +64,52 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as WalletBody;
   const payload = normalizePayload(body);
-  if (!payload.owner || !payload.reason || !Number.isFinite(payload.amount)) {
-    return NextResponse.json({ error: "بيانات الحركة غير مكتملة" }, { status: 400 });
+  if (!payload.owner && !payload.student_phone) {
+    return NextResponse.json({ error: "يجب تحديد الطالب" }, { status: 400 });
   }
 
   const supabase = createRouteSupabaseClient(await cookies());
+  
+  // Find user by owner name or phone
+  const searchPhone = payload.student_phone || payload.owner;
+  const { data: userData } = await supabase
+    .from("users")
+    .select("id, name, phone")
+    .or(`phone.eq.${searchPhone},name.eq.${payload.owner}`)
+    .limit(1)
+    .single();
+
+  if (!userData) {
+    return NextResponse.json({ error: "الطالب غير موجود" }, { status: 404 });
+  }
+
+  const absAmount = Math.abs(payload.amount);
+  const type = payload.amount < 0 ? 'debit' : 'credit';
+
   const { data, error } = await supabase
-    .from("wallets")
+    .from("transactions")
     .insert({
-      owner: payload.owner,
-      account_type: payload.account_type,
-      amount: payload.amount,
+      user_id: userData.id,
+      amount: absAmount,
+      type: type,
       reason: payload.reason,
-      student_phone: payload.student_phone,
+      created_by: profile.id,
       created_at: payload.created_at,
     })
-    .select("*")
+    .select("id, amount, type, reason, created_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  return NextResponse.json({ wallet: data });
+  return NextResponse.json({
+    wallet: {
+      id: data.id,
+      amount: data.type === 'debit' ? -data.amount : data.amount,
+      reason: data.reason,
+      created_at: data.created_at,
+      owner: userData.name || userData.phone,
+      student_phone: userData.phone,
+      account_type: "student",
+    }
+  });
 }

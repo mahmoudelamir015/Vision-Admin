@@ -21,6 +21,7 @@ export type AppUserRecord = {
   profile_image?: string;
   extra?: Record<string, unknown>;
   password?: string;
+  wallet_balance?: number;
 };
 
 const readExtra = (record: SupabaseRecord | null): Record<string, unknown> => {
@@ -73,6 +74,7 @@ const normalizeUser = (record: SupabaseRecord | null): AppUserRecord | null => {
     student_code: typeof record.student_code === "string" ? record.student_code : undefined,
     profile_image: typeof extra.profile_image === "string" ? extra.profile_image : undefined,
     extra: Object.keys(extra).length > 0 ? extra : undefined,
+    wallet_balance: typeof record.wallet_balance === "number" ? record.wallet_balance : undefined,
   };
 };
 

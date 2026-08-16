@@ -8,6 +8,9 @@ export type WalletEntry = {
   reason: string;
   created_at?: string;
   student_phone?: string;
+  student_code?: string;
+  employee_name?: string;
+  employee_phone?: string;
 };
 
 const normalizeEntry = (record: SupabaseRecord | null): WalletEntry | null => {
@@ -27,6 +30,9 @@ const normalizeEntry = (record: SupabaseRecord | null): WalletEntry | null => {
     reason,
     created_at: typeof record.created_at === "string" ? record.created_at : undefined,
     student_phone: typeof record.student_phone === "string" ? record.student_phone : undefined,
+    student_code: typeof record.student_code === "string" ? record.student_code : undefined,
+    employee_name: typeof record.employee_name === "string" ? record.employee_name : undefined,
+    employee_phone: typeof record.employee_phone === "string" ? record.employee_phone : undefined,
   };
 };
 

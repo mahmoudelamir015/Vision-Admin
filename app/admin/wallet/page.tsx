@@ -161,7 +161,7 @@ export default function WalletPage() {
 
   const filteredEntries = searchCode.trim()
     ? entries.filter((entry) =>
-        [entry.owner, entry.reason, entry.student_phone ?? "", entry.id ?? ""]
+        [entry.owner, entry.reason, entry.student_phone ?? "", entry.student_code ?? "", entry.id ?? ""]
           .join(" ")
           .toLowerCase()
           .includes(searchCode.trim().toLowerCase()),

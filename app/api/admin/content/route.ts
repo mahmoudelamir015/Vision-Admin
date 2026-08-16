@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentAdminProfile } from "@/src/lib/auth/session";
 import { createServiceSupabaseClient } from "@/src/lib/supabase/admin";
 
-const BUCKET = "teacher-materials";
+const BUCKET = "teacher_materials";
 
 export async function GET() {
   const profile = await getCurrentAdminProfile();
@@ -39,10 +39,18 @@ export async function POST(request: Request) {
   let fileName: string | null = null;
 
   if (file && file instanceof Blob) {
+    const BUCKET = "teacher_materials"; // Changed to underscore
     const ext = (file as File).name?.split(".").pop() ?? "bin";
     const storageKey = `admin/${Date.now()}-${title.replace(/\s+/g, "_").slice(0, 40)}.${ext}`;
 
     const fileBuffer = await file.arrayBuffer();
+
+    // Ensure bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find((b) => b.name === BUCKET)) {
+      await supabase.storage.createBucket(BUCKET, { public: true });
+    }
+
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(storageKey, fileBuffer, {

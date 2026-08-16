@@ -34,6 +34,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "غرفة العمليات الشاملة", href: "/admin", icon: LayoutDashboard, permission: "control-room", group: "core" },
+  { name: "شاشة البوابة (Gate)", href: "/admin/gate", icon: Shield, permission: "gate", group: "core" },
   { name: "إدارة الطلاب", href: "/admin/users", icon: Users, permission: "students", group: "core" },
   { name: "الحضور الذكي", href: "/admin/attendance", icon: UserCheck, permission: "attendance", group: "core" },
   { name: "المحفظة والماليات", href: "/admin/wallet", icon: Wallet, permission: "wallet", group: "finance" },
@@ -41,8 +42,10 @@ const navItems: NavItem[] = [
   { name: "تقفيل اليومية", href: "/admin/wallet/daily-close", icon: Wallet, permission: "wallet", group: "finance", masterOnly: true },
   { name: "إدارة الموظفين", href: "/admin/staff", icon: UserPlus, permission: "staff", group: "management" },
   { name: "إدارة المدرسين", href: "/admin/teachers", icon: GraduationCap, permission: "manage_teachers", group: "management" },
+  { name: "إحصائيات المدرسين", href: "/admin/teacher-analytics", icon: GraduationCap, permission: "manage_teachers", group: "management" },
   { name: "تخصيص المواد", href: "/admin/teacher-groups", icon: Network, permission: "manage_teachers", group: "management" },
   { name: "غرفة العمليات", href: "/admin/operations", icon: Eye, permission: "operations", group: "management" },
+  { name: "سجل الحركات الرقابي", href: "/admin/audit", icon: Shield, permission: "audit", group: "management", masterOnly: true },
   { name: "الخزنة", href: "/admin/vault", icon: Vault, permission: "vault", group: "management", masterOnly: true },
   { name: "إدارة المحتوى", href: "/admin/content", icon: FileText, permission: "content", group: "content", masterOnly: true },
   { name: "مركز الإشعارات", href: "/admin/notifications", icon: Bell, permission: "notifications", group: "content", masterOnly: true },

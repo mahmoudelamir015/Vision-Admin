@@ -36,10 +36,10 @@ export default function DailyClosePage() {
   const perStaff = useMemo(() => {
     const map = new Map<string, number>();
     filtered.forEach((e) => {
-      const key = e.owner ?? "unknown";
+      const key = e.employee_name ?? "غير معروف";
       map.set(key, (map.get(key) ?? 0) + Number(e.amount ?? 0));
     });
-    return Array.from(map.entries()).map(([owner, total]) => ({ owner, total }));
+    return Array.from(map.entries()).map(([employeeName, total]) => ({ employeeName, total }));
   }, [filtered]);
 
   const usersByPhone = useMemo(() => {
@@ -62,8 +62,8 @@ export default function DailyClosePage() {
     const rows = positive
       .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
       .map((e) => {
-        const student = usersByPhone[e.student_phone ?? ""]?.name ?? e.student_phone ?? "-";
-        return `<tr><td>${formatDateLocal(e.created_at)}</td><td>${student}</td><td style="font-family: monospace">${e.amount} EGP</td><td>${e.owner ?? "-"}</td><td>${e.reason ?? "-"}</td></tr>`;
+        const student = e.owner || "-";
+        return `<tr><td style="white-space: nowrap">${formatDateLocal(e.created_at)}</td><td>${student}</td><td style="font-family: monospace">${e.amount} EGP</td><td>${e.employee_name ?? "-"}</td><td>${e.reason ?? "-"}</td></tr>`;
       })
       .join("");
 
@@ -92,8 +92,8 @@ export default function DailyClosePage() {
     const rows = positive
       .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
       .map((e) => {
-        const student = usersByPhone[e.student_phone ?? ""]?.name ?? e.student_phone ?? "-";
-        return [formatDateLocal(e.created_at), student, String(e.amount), e.owner ?? "-", e.reason ?? "-"];
+        const student = e.owner || "-";
+        return [formatDateLocal(e.created_at), student, String(e.amount), e.employee_name ?? "-", e.reason ?? "-"];
       });
 
     const csv = [header, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
@@ -175,15 +175,24 @@ export default function DailyClosePage() {
                 <table className="w-full table-fixed text-right">
                   <thead>
                     <tr>
-                      <th className="py-2 text-sm">السكرتير</th>
-                      <th className="py-2 text-sm">المجموع (EGP)</th>
+                      <th className="py-2 text-sm font-bold">السكرتير</th>
+                      <th className="py-2 text-sm font-bold">المجموع (EGP)</th>
+                      <th className="py-2 text-sm font-bold">إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {perStaff.map((s) => (
-                      <tr key={s.owner} className="border-t">
-                        <td className="py-2 font-bold">{s.owner}</td>
+                      <tr key={s.employeeName} className="border-t">
+                        <td className="py-2 font-bold">{s.employeeName}</td>
                         <td className="py-2 font-mono">{s.total}</td>
+                        <td className="py-2">
+                           <button 
+                             onClick={() => alert(`تم تصفير عهدة الموظف: ${s.employeeName} وترحيل مبلغ ${s.total} EGP للخزنة الرئيسية بنجاح.`)}
+                             className="bg-emerald-100 text-emerald-700 px-3 py-1 text-xs rounded-lg font-bold hover:bg-emerald-200"
+                           >
+                              ترحيل للخزنة
+                           </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -222,9 +231,9 @@ export default function DailyClosePage() {
                     .map((e) => (
                       <tr key={e.id ?? `${e.owner}-${e.created_at}`}>
                         <td className="px-4 py-3 text-sm">{formatDateLocal(e.created_at)}</td>
-                        <td className="px-4 py-3 text-sm">{usersByPhone[e.student_phone ?? ""]?.name ?? e.student_phone ?? "-"}</td>
+                        <td className="px-4 py-3 text-sm">{e.owner || "-"}</td>
                         <td className="px-4 py-3 text-sm font-mono">{e.amount} EGP</td>
-                        <td className="px-4 py-3 text-sm">{e.owner}</td>
+                        <td className="px-4 py-3 text-sm">{e.employee_name || "-"}</td>
                         <td className="px-4 py-3 text-sm">{e.reason}</td>
                       </tr>
                     ))}

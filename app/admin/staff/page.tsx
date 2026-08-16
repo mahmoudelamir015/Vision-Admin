@@ -244,7 +244,7 @@ export default function StaffPage() {
     setSelectedStaffId(member.id ?? null);
     setIsEditModalOpen(true);
     setName(member.name);
-    setPhone(member.phone);
+    setPhone(member.phone?.replace(/^\\+?20/, '0'));
     setPermissions((member.permissions ?? ["attendance"]) as StaffPermission[]);
     setPassword("");
     setStaffFormFeedback(null);
@@ -428,7 +428,7 @@ export default function StaffPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-extrabold text-[#0A2540] text-[#0A2540]">{selectedStaff.name}</h3>
-                <p className="text-sm font-bold text-slate-500 text-slate-500">{selectedStaff.phone}</p>
+                <p className="text-sm font-bold text-slate-500 text-slate-500">{selectedStaff.phone?.replace(/^\\+?20/, '0')}</p>
               </div>
               <button
                 type="button"
@@ -572,7 +572,7 @@ export default function StaffPage() {
                   <tr key={member.id ?? member.phone}>
                     <td className="px-4 py-4 font-bold text-[#0A2540] text-[#0A2540]">{member.name}</td>
                     <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">
-                      {member.phone}
+                      {member.phone?.replace(/^\\+?20/, '0')}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">

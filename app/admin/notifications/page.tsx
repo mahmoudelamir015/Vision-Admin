@@ -245,11 +245,11 @@ export default function NotificationsPage() {
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {resetRequests.map((request) => (
-                <div key={request.phone} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm border-slate-200 bg-white">
+                <div key={request.phone?.replace(/^\\+?20/, '0')} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm border-slate-200 bg-white">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <h3 className="text-base font-extrabold text-[#0A2540] text-[#0A2540]">{request.name}</h3>
-                      <p className="text-sm font-bold text-slate-500 text-slate-500">{request.phone}</p>
+                      <p className="text-sm font-bold text-slate-500 text-slate-500">{request.phone?.replace(/^\\+?20/, '0')}</p>
                     </div>
                     <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                       {request.role}

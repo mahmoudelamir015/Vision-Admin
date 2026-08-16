@@ -195,7 +195,7 @@ export default function TeachersPage() {
     setTeacherPhotoPreview(teacher.profile_image ?? null);
     setForm({
       name: teacher.name,
-      phone: teacher.phone,
+      phone: teacher.phone?.replace(/^\\+?20/, '0'),
       stage: (teacher.stage as TeacherStage) || "secondary",
       school_name: teacher.school_name ?? "",
       subjects: (teacher.subjects ?? []).join(", "),
@@ -240,7 +240,7 @@ export default function TeachersPage() {
             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
           />
           <input
-            value={form.phone}
+            value={form.phone?.replace(/^\\+?20/, '0')}
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
@@ -326,7 +326,7 @@ export default function TeachersPage() {
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
               />
               <input
-                value={form.phone}
+                value={form.phone?.replace(/^\\+?20/, '0')}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="010XXXXXXXX"
                 dir="ltr"
@@ -422,7 +422,7 @@ export default function TeachersPage() {
                       )}
                       {teacher.name}
                     </td>
-                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">{teacher.phone}</td>
+                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">{teacher.phone?.replace(/^\\+?20/, '0')}</td>
                     <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">{stageLabels[teacher.stage as TeacherStage] ?? "-"}</td>
                     <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">{teacher.school_name ?? "-"}</td>
                     <td className="px-4 py-4 text-left">

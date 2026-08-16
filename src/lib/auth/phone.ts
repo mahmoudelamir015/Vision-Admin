@@ -23,7 +23,15 @@ export function normalizeEgyptianPhone(phone: string): string | null {
   const local = digits.startsWith("20") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits;
   if (!/^1\d{9}$/.test(local)) return null;
 
-  return `0${local}`;
+  return `+20${local}`;
+}
+
+export function displayEgyptianPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const cleaned = phone.trim();
+  if (cleaned.startsWith("+20")) return "0" + cleaned.slice(3);
+  if (cleaned.startsWith("20") && cleaned.length === 12) return "0" + cleaned.slice(2);
+  return cleaned;
 }
 
 export function isEgyptianMobilePhone(phone: string): boolean {
