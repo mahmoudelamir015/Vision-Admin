@@ -91,7 +91,7 @@ function buildProfileRow(payload: ReturnType<typeof normalizePayload>, authUserI
     auth_user_id: authUserId,
     name: payload.name,
     full_name: payload.name,
-    phone: payload.phone?.replace(/^\\+?20/, '0'),
+    phone: payload.phone?.replace(/^\+?20/, '0'),
     role: payload.role,
     permissions: payload.permissions,
     active: payload.active,
@@ -153,8 +153,27 @@ export async function POST(request: Request) {
     }
 
     const normalizedPhone = payload.phone ?? "";
-    const authEmail = makeAuthEmail(normalizedPhone);
     const serviceSupabase = createServiceSupabaseClient();
+
+    const localDigits = normalizedPhone.replace(/\D/g, "").slice(-10);
+    const candidatePhones = [
+      normalizedPhone,
+      `0${localDigits}`,
+      `+20${localDigits}`,
+      `20${localDigits}`,
+    ];
+
+    const { data: existingUserInDb } = await serviceSupabase
+      .from("users")
+      .select("id, phone")
+      .in("phone", candidatePhones)
+      .maybeSingle();
+
+    if (existingUserInDb) {
+      return NextResponse.json({ error: "رقم الهاتف مسجل بالفعل" }, { status: 400 });
+    }
+
+    const authEmail = makeAuthEmail(normalizedPhone);
 
     const createWithServiceRole = async () => {
       const authAttributes: Parameters<typeof serviceSupabase.auth.admin.createUser>[0] = {
@@ -193,7 +212,7 @@ export async function POST(request: Request) {
             name: payload.name,
             full_name: payload.name,
             role: payload.role,
-            phone: payload.phone?.replace(/^\\+?20/, '0'),
+            phone: payload.phone?.replace(/^\+?20/, '0'),
             auth_email: authEmail,
             stage: payload.stage ?? null,
             grade: payload.grade ?? null,
@@ -208,9 +227,19 @@ export async function POST(request: Request) {
     };
 
     const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const authResult = hasServiceRole ? await createWithServiceRole() : await createWithEmailSignup();
-    const authData = authResult.data;
-    const authError = authResult.error;
+    let authResult = hasServiceRole ? await createWithServiceRole() : await createWithEmailSignup();
+    let authData = authResult.data;
+    let authError = authResult.error;
+
+    if (authError && (authError.message?.includes("already") || authError.message?.includes("registered"))) {
+      // If auth record exists but DB users table doesn't, try finding the auth user to reuse ID
+      const { data: listData } = await serviceSupabase.auth.admin.listUsers();
+      const existingAuthUser = listData?.users?.find(u => u.phone === payload.phone || u.email === authEmail);
+      if (existingAuthUser) {
+        authData = { user: existingAuthUser };
+        authError = null;
+      }
+    }
 
     if (authError || !authData.user) {
       return NextResponse.json({ error: getReadableSupabaseError(authError) }, { status: 400 });
@@ -223,7 +252,6 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      await serviceSupabase.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json({ error: getReadableSupabaseError(error) }, { status: 400 });
     }
 

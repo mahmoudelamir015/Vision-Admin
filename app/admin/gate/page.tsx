@@ -6,9 +6,11 @@ import { Search, XCircle, CheckCircle, Shield, AlertTriangle } from "lucide-reac
 import { useAuth } from "@/components/admin/AuthContext";
 import { fetchUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 
+import { normalizeEgyptianPhone } from "@/src/lib/auth/phone";
+
 export default function GateModePage() {
   const { user } = useAuth();
-  const isAdminOrGate = user?.role === "master_admin" || user?.permissions.includes("gate");
+  const isAdminOrGate = user?.role === "master_admin" || user?.permissions?.includes("gate");
   
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,13 +19,12 @@ export default function GateModePage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Auto-focus search on mount
     inputRef.current?.focus();
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const searchTerm = query.trim().toLowerCase();
+    const searchTerm = query.trim();
     if (!searchTerm) return;
     
     setLoading(true);
@@ -32,24 +33,34 @@ export default function GateModePage() {
     
     try {
       const records = await fetchUsers("student");
-      const matched = records.find(r => 
-        (r.student_code && r.student_code.toLowerCase() === searchTerm) ||
-        (r.phone && r.phone.replace(/^\\+?20/, '0') === searchTerm) ||
-        (r.phone && r.phone === searchTerm)
-      );
+      const normalizedSearchPhone = normalizeEgyptianPhone(searchTerm);
+      const cleanSearch = searchTerm.toLowerCase();
+
+      const matched = records.find((r) => {
+        const studentCode = r.student_code ? String(r.student_code).trim().toLowerCase() : "";
+        const cleanPhone = r.phone ? String(r.phone).trim() : "";
+        const localPhone = cleanPhone.replace(/^\+?20/, "0");
+
+        return (
+          (studentCode && studentCode === cleanSearch) ||
+          (cleanPhone && cleanPhone === searchTerm) ||
+          (localPhone && localPhone === searchTerm) ||
+          (normalizedSearchPhone && cleanPhone === normalizedSearchPhone)
+        );
+      });
 
       if (matched) {
         setResult(matched);
       } else {
-        setErrorMsg("تعذر العثور على الطالب بهذة البيانات.");
+        setErrorMsg("تعذر العثور على الطالب بهذه البيانات.");
       }
     } catch (error) {
+      console.error("Gate mode search error:", error);
       setErrorMsg("خطأ في الاتصال بقاعدة البيانات.");
     }
     
     setLoading(false);
-    setQuery(""); // clear input for next rapid scan
-    // re-focus for scanner
+    setQuery("");
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
@@ -123,7 +134,7 @@ export default function GateModePage() {
             </h2>
             <div className="text-xl font-bold mb-6 text-slate-700 flex justify-center items-center gap-4">
                <span className="bg-white/60 px-4 py-2 rounded-xl backdrop-blur-sm">{result.student_code || "أضيف حديثاً"}</span>
-               <span className="bg-white/60 px-4 py-2 rounded-xl backdrop-blur-sm">{result.phone?.replace(/^\\+?20/, '0')}</span>
+               <span className="bg-white/60 px-4 py-2 rounded-xl backdrop-blur-sm">{result.phone?.replace(/^\+?20/, '0')}</span>
             </div>
 
             <div className={`mt-8 max-w-lg mx-auto rounded-3xl p-6 ${isDebt ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"}`}>

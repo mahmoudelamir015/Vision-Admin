@@ -38,8 +38,8 @@ export function OptionalPhotoPicker({ label, description, fileName, previewUrl, 
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      onChange(file.name, null);
+    if (file.size > 5 * 1024 * 1024) {
+      alert("حجم الصورة يجب ألا يتجاوز 5 ميجابايت");
       return;
     }
 
@@ -74,13 +74,13 @@ export function OptionalPhotoPicker({ label, description, fileName, previewUrl, 
       {previewUrl ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white">
+            <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm">
               <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
                 <Camera className="h-4 w-4 text-[#D4AF37]" />
-                تم اختيار الصورة
+                معاينة الصورة
               </div>
               <p className="mt-1 truncate text-xs font-medium text-slate-500">{fileName}</p>
             </div>

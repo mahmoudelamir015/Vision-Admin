@@ -76,7 +76,7 @@ export async function PATCH(request: Request) {
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
   }
 
-  const { error: statusError } = await serviceSupabase
+  let { error: statusError } = await serviceSupabase
     .from("change_requests")
     .update({
       status: action === "approve" ? "approved" : "rejected",
@@ -85,6 +85,18 @@ export async function PATCH(request: Request) {
       resolved_at: new Date().toISOString(),
     })
     .eq("id", id);
+
+  if (statusError && statusError.message?.includes("resolved_at")) {
+    const fallbackUpdate = await serviceSupabase
+      .from("change_requests")
+      .update({
+        status: action === "approve" ? "approved" : "rejected",
+        admin_reason: action === "reject" ? adminReason : null,
+        resolved_by: profile.id,
+      })
+      .eq("id", id);
+    statusError = fallbackUpdate.error;
+  }
 
   if (statusError) return NextResponse.json({ error: statusError.message }, { status: 400 });
 
