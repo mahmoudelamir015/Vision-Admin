@@ -33,27 +33,37 @@ export async function GET() {
   const supabase = createRouteSupabaseClient(await cookies());
   const { data, error } = await supabase
     .from("transactions")
-    .select(`
-      id, amount, type, reason, created_at,
-      users!transactions_user_id_fkey(name, phone, student_code),
-      employee:users!transactions_created_by_fkey(name, phone)
-    `)
+    .select("id, user_id, created_by, amount, type, reason, created_at")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  const mappedData = data.map((t: any) => ({
-    id: t.id,
-    amount: t.type === 'debit' ? -t.amount : t.amount,
-    reason: t.reason,
-    created_at: t.created_at,
-    owner: t.users?.name || t.users?.phone || "غير معروف",
-    student_phone: t.users?.phone,
-    student_code: t.users?.student_code,
-    employee_name: t.employee?.name || "النظام",
-    employee_phone: t.employee?.phone,
-    account_type: "student",
-  }));
+  const transactionRows = Array.isArray(data) ? data : [];
+  const userIds = Array.from(new Set(transactionRows.flatMap((row) => [row.user_id, row.created_by]).filter(Boolean)));
+  const { data: users, error: usersError } = userIds.length
+    ? await supabase.from("users").select("id, auth_user_id, name, phone, student_code").in("id", userIds)
+    : { data: [], error: null };
+
+  if (usersError) return NextResponse.json({ error: usersError.message }, { status: 400 });
+
+  const userById = new Map((users ?? []).map((user) => [user.id, user]));
+  const userByAuthId = new Map((users ?? []).filter((user) => user.auth_user_id).map((user) => [user.auth_user_id, user]));
+  const mappedData = transactionRows.map((transaction) => {
+    const owner = userById.get(transaction.user_id);
+    const employee = userById.get(transaction.created_by) ?? userByAuthId.get(transaction.created_by);
+    return {
+      id: transaction.id,
+      amount: transaction.type === "debit" ? -transaction.amount : transaction.amount,
+      reason: transaction.reason,
+      created_at: transaction.created_at,
+      owner: owner?.name || owner?.phone || "غير معروف",
+      student_phone: owner?.phone,
+      student_code: owner?.student_code,
+      employee_name: employee?.name || "النظام",
+      employee_phone: employee?.phone,
+      account_type: "student",
+    };
+  });
 
   return NextResponse.json({ wallets: mappedData });
 }
@@ -69,7 +79,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = createRouteSupabaseClient(await cookies());
-  
+
   // Find user by owner name or phone
   const searchPhone = payload.student_phone || payload.owner;
   const { data: userData } = await supabase

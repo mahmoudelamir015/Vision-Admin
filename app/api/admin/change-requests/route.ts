@@ -11,7 +11,7 @@ async function getProfileRow(userId: string) {
   const { data } = await serviceSupabase
     .from("users")
     .select("id, auth_user_id, name, phone, role, stage, grade, track, school_name, student_code, subjects, extra")
-    .eq("auth_user_id", userId)
+    .eq("id", userId)
     .maybeSingle();
   return data as Record<string, unknown> | null;
 }
@@ -72,7 +72,7 @@ export async function PATCH(request: Request) {
       updatePayload[requestedField] = requestedField === "subjects" ? newValue.split(",").map((item) => item.trim()).filter(Boolean) : newValue;
     }
 
-    const { error: updateError } = await serviceSupabase.from("users").update(updatePayload).eq("auth_user_id", requestRecord.user_id);
+    const { error: updateError } = await serviceSupabase.from("users").update(updatePayload).eq("id", requestRecord.user_id);
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });
   }
 

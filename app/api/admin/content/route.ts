@@ -45,10 +45,18 @@ export async function POST(request: Request) {
 
     const fileBuffer = await file.arrayBuffer();
 
-    // Ensure bucket exists
-    const { data: buckets } = await supabase.storage.listBuckets();
-    if (!buckets?.find((b) => b.name === BUCKET)) {
-      await supabase.storage.createBucket(BUCKET, { public: true });
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some((bucket) => bucket.name === BUCKET) ?? false;
+
+    if (bucketsError && !bucketExists) {
+      return NextResponse.json({ error: `تعذر التحقق من مخزن الملفات: ${bucketsError.message}` }, { status: 500 });
+    }
+
+    if (!bucketExists) {
+      const { error: createBucketError } = await supabase.storage.createBucket(BUCKET, { public: true });
+      if (createBucketError && !createBucketError.message.toLowerCase().includes("already exists")) {
+        return NextResponse.json({ error: `تعذر إنشاء مخزن الملفات: ${createBucketError.message}` }, { status: 500 });
+      }
     }
 
     const { error: uploadError } = await supabase.storage
