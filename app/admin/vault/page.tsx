@@ -31,23 +31,23 @@ export default function VaultPage() {
           <p className="mt-2 text-4xl font-black">0</p>
           <p className="mt-2 text-sm font-medium text-white/70">جاهز للاستقبال بعد الربط.</p>
         </div>
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="flex items-center gap-3">
             <TrendingUp className="h-5 w-5 text-emerald-500" />
-            <p className="text-sm font-bold text-slate-500 text-slate-500">الوارد</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">الوارد</p>
           </div>
-          <p className="mt-2 text-2xl font-black text-[#0A2540] text-[#0A2540]">0 ج.م</p>
+          <p className="mt-2 text-2xl font-black text-[#0A2540] dark:text-white">0 ج.م</p>
         </div>
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="flex items-center gap-3">
             <TrendingDown className="h-5 w-5 text-rose-500" />
-            <p className="text-sm font-bold text-slate-500 text-slate-500">المنصرف</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">المنصرف</p>
           </div>
-          <p className="mt-2 text-2xl font-black text-[#0A2540] text-[#0A2540]">0 ج.م</p>
+          <p className="mt-2 text-2xl font-black text-[#0A2540] dark:text-white">0 ج.م</p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 rounded-[2rem] border border-slate-200 bg-white p-2 shadow-sm border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-wrap gap-3 rounded-[2rem] border border-slate-200 bg-white p-2 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
         {[
           { id: "ALL", label: "الكل" },
           { id: "INCOME", label: "الوارد" },
@@ -60,7 +60,7 @@ export default function VaultPage() {
             className={`rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${
               activeTab === item.id
                 ? "bg-[#0A2540] text-white dark:bg-[#D4AF37] dark:text-[#0A2540]"
-                : "text-slate-500 hover:text-slate-700 text-slate-700"
+                : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
             }`}
           >
             {item.label}
@@ -71,15 +71,15 @@ export default function VaultPage() {
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
         <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
             <Vault className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">سجل الحركات المالية</h2>
-            <p className="text-sm font-bold text-slate-500 text-slate-500">
+            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">سجل الحركات المالية</h2>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
               لا توجد بيانات وهمية. أول حركة حقيقية ستظهر هنا بعد الربط.
             </p>
           </div>

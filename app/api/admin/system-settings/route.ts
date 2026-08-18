@@ -7,6 +7,9 @@ type SystemSettingsBody = {
   wallet_enabled?: boolean;
   registration_open?: boolean;
   show_results?: boolean;
+  teacher_ratio?: number;
+  lesson_price?: number;
+  auto_settlement?: number;
 };
 
 export async function GET() {
@@ -16,7 +19,7 @@ export async function GET() {
   const supabase = createRouteSupabaseClient(await cookies());
   const { data, error } = await supabase
     .from("system_settings")
-    .select("id, wallet_enabled, registration_open, show_results")
+    .select("id, wallet_enabled, registration_open, show_results, teacher_ratio, lesson_price, auto_settlement")
     .order("id", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -34,7 +37,7 @@ export async function PATCH(request: Request) {
   const supabase = createRouteSupabaseClient(await cookies());
   const { data: existing } = await supabase
     .from("system_settings")
-    .select("id, wallet_enabled, registration_open, show_results")
+    .select("id, wallet_enabled, registration_open, show_results, teacher_ratio, lesson_price, auto_settlement")
     .order("id", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -46,9 +49,12 @@ export async function PATCH(request: Request) {
         wallet_enabled: body.wallet_enabled ?? existing.wallet_enabled,
         registration_open: body.registration_open ?? existing.registration_open,
         show_results: body.show_results ?? existing.show_results,
+        teacher_ratio: body.teacher_ratio ?? existing.teacher_ratio,
+        lesson_price: body.lesson_price ?? existing.lesson_price,
+        auto_settlement: body.auto_settlement ?? existing.auto_settlement,
       })
       .eq("id", existing.id)
-      .select("id, wallet_enabled, registration_open, show_results")
+      .select("id, wallet_enabled, registration_open, show_results, teacher_ratio, lesson_price, auto_settlement")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -61,8 +67,11 @@ export async function PATCH(request: Request) {
       wallet_enabled: body.wallet_enabled ?? true,
       registration_open: body.registration_open ?? false,
       show_results: body.show_results ?? true,
+      teacher_ratio: body.teacher_ratio ?? 60,
+      lesson_price: body.lesson_price ?? 250,
+      auto_settlement: body.auto_settlement ?? 80,
     })
-    .select("id, wallet_enabled, registration_open, show_results")
+    .select("id, wallet_enabled, registration_open, show_results, teacher_ratio, lesson_price, auto_settlement")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

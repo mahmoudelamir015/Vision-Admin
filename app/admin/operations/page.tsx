@@ -114,7 +114,7 @@ export default function OperationsPage() {
             id: `usr-${u.id ?? u.phone}`,
             type: "user",
             title: u.name,
-            subtitle: `${u.role} - ${u.phone?.replace(/^\\+?20/, '0')}`,
+            subtitle: `${u.role} - ${u.phone?.replace(/^\+?20/, '0')}`,
             created_at: (u as AppUserRecord & { created_at?: string }).created_at,
           }),
         );

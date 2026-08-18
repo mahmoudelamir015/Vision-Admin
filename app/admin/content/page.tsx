@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { CircleDashed, FileText, ShieldAlert, Upload } from "lucide-react";
 import { useAuth } from "@/components/admin/AuthContext";
@@ -9,79 +9,10 @@ import EmptyState from "@/components/admin/EmptyState";
 export default function ContentPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "master_admin";
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadFeedback, setUploadFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("");
-  const [price, setPrice] = useState("");
-  const [materials, setMaterials] = useState<any[]>([]);
-
-  const loadMaterials = async () => {
-    try {
-      const res = await fetch("/api/admin/content");
-      const data = await res.json().catch(() => null);
-      if (data?.materials) {
-        setMaterials(data.materials);
-      }
-    } catch {}
-  };
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadMaterials();
-  }, []);
-
-  const handleUpload = async () => {
-    if (!title.trim()) {
-      setUploadFeedback({ type: "error", message: "عنوان المحتوى مطلوب" });
-      return;
-    }
-    
-    setIsUploading(true);
-    setUploadFeedback(null);
-
-    try {
-      const formData = new FormData();
-      if (selectedFile) formData.append("file", selectedFile);
-      formData.append("title", title);
-      formData.append("subject", subject);
-      formData.append("price", price || "0");
-
-      const res = await fetch("/api/admin/content", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("تعذر الرفع");
-      
-      setUploadFeedback({ type: "success", message: "تم الرفع وإضافة المحتوى بنجاح." });
-      setSelectedFile(null);
-      setTitle("");
-      setSubject("");
-      setPrice("");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      
-      void loadMaterials();
-    } catch (e) {
-      setUploadFeedback({ type: "error", message: "وصلنا خطأ أثناء الرفع، حاول مرة أخرى." });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("متأكد إنك عاوز تحذف الملف ده؟")) return;
-    try {
-      await fetch("/api/admin/content", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      void loadMaterials();
-    } catch {}
-  };
 
   if (!isAdmin) {
     return (
@@ -98,85 +29,44 @@ export default function ContentPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
             <FileText className="h-7 w-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة المحتوى</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
-              ارفع الملفات والمذكرات مباشرة وستكون متاحة للطلاب والمدرسين.
+            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة المحتوى</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+              رفع الملفات والمذكرات سيتصل لاحقاً بالـ API بدون بيانات وهمية.
             </p>
           </div>
         </div>
       </motion.div>
 
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
-          {materials.length === 0 ? (
-            <EmptyState
-              icon={CircleDashed}
-              title="لا توجد ملفات منشورة حالياً"
-              description="أي ملف سيُضاف من هنا سيظهر تلقائياً في قائمة المحتوى ويمكن للطلاب الوصول إليه."
-            />
-          ) : (
-            <div className="grid gap-3">
-              {materials.map((m) => (
-                <div key={m.id} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4">
-                  <div>
-                    <h3 className="font-bold text-[#0A2540]">{m.title}</h3>
-                    <p className="text-sm text-slate-500">{m.subject || "بدون مادة"} • {m.price} جنيه</p>
-                    {m.file_url && <a href={m.file_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">عرض الملف</a>}
-                  </div>
-                  <button onClick={() => handleDelete(m.id)} className="text-xs font-bold text-red-600 hover:underline">مسح</button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
+          <EmptyState
+            icon={CircleDashed}
+            title="لا توجد ملفات منشورة حالياً"
+            description="أي ملف سيُضاف من هنا أو من Supabase سيظهر تلقائياً في قائمة المحتوى."
+          />
         </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
+        <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
               <Upload className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">رفع ملف جديد</h2>
-              <p className="text-sm font-bold text-slate-500 text-slate-500">
-                أضف المذكرة وحدد المادة والسعر.
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">رفع ملف جديد</h2>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                الواجهة جاهزة للربط مع التخزين.
               </p>
             </div>
           </div>
 
-          <div className="mb-4 grid gap-3">
-            <input
-              type="text"
-              placeholder="عنوان المحتوى *"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D4AF37]"
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="المادة (اختياري)"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-              <input
-                type="number"
-                placeholder="السعر (0 للمجاني)"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-            </div>
-          </div>
-
-          <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-center border-slate-200 bg-slate-50">
+          <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-white/10 dark:bg-white/5">
             <input
               ref={fileInputRef}
               type="file"
@@ -184,36 +74,42 @@ export default function ContentPage() {
               className="sr-only"
               onChange={(event) => {
                 const file = event.target.files?.[0] ?? null;
-                setSelectedFile(file);
+                if (!file) {
+                  setSelectedFileName(null);
+                  setUploadMessage(null);
+                  return;
+                }
+                setSelectedFileName(file.name);
+                setUploadMessage("تم اختيار الملف بنجاح، سيتم ربط الرفع لاحقاً عند تكوين الـ API.");
               }}
             />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex min-h-[5rem] w-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-white bg-slate-50 text-slate-700"
+              className="inline-flex min-h-[8rem] w-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm font-bold text-slate-500 transition-colors hover:border-slate-300 hover:bg-white dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
             >
               <div>
-                <p className="mb-3">اختر الملف (اختياري)</p>
-                {selectedFile ? (
-                  <p className="mt-2 text-sm font-bold text-[#0A2540]">الملف: {selectedFile.name}</p>
+                <p className="mb-3">اسحب الملف هنا أو اختر من الجهاز</p>
+                <p className="text-xs font-medium text-slate-400">PWA ready • Mobile first</p>
+                {selectedFileName ? (
+                  <p className="mt-4 text-sm text-slate-700 dark:text-white">الملف المحدد: {selectedFileName}</p>
                 ) : null}
               </div>
             </button>
           </div>
           <button
             type="button"
-            onClick={handleUpload}
-            disabled={isUploading}
-            className="mt-4 inline-flex w-full items-center justify-center rounded-[1.5rem] bg-[#0A2540] px-4 py-3 text-sm font-bold text-white transition-opacity disabled:opacity-70"
+            disabled
+            className="mt-4 inline-flex w-full items-center justify-center rounded-[1.5rem] border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-white/10 dark:bg-white/10 dark:text-slate-300"
           >
-            {isUploading ? "جاري الرفع والإضافة..." : "حفظ ونشر المحتوى"}
+            رفع الملف غير مفعل بعد
           </button>
-          
-          {uploadFeedback ? (
-            <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
-              uploadFeedback.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'
-            }`}>
-              {uploadFeedback.message}
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+            الرفع حالياً هو واجهة تحضيرية فقط. يحتاج إنشاء API رفع أو تكامل Supabase Storage ليعمل بالشكل الحقيقي.
+          </div>
+          {uploadMessage ? (
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+              {uploadMessage}
             </div>
           ) : null}
         </div>

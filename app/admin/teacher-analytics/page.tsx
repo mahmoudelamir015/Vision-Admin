@@ -1,16 +1,55 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BarChart3, Star, TrendingUp, Users } from "lucide-react";
+import { BookOpen, Star, TrendingUp, Users } from "lucide-react";
 import { fetchUsers, type AppUserRecord } from "@/src/lib/supabase/users";
 import { useAuth } from "@/components/admin/AuthContext";
+import { getSupabaseClient } from "@/src/lib/supabase";
+
+type AnalyticsData = {
+  [teacherId: string]: {
+    studentsCount: number;
+    materialsCount: number;
+  };
+};
 
 export default function TeacherAnalyticsPage() {
   const { user } = useAuth();
   const [teachers, setTeachers] = useState<AppUserRecord[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData>({});
 
   useEffect(() => {
-    fetchUsers("teacher").then(setTeachers);
+    const load = async () => {
+      const records = await fetchUsers("teacher");
+      setTeachers(records);
+
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      const [{ data: groups }, { data: materials }] = await Promise.all([
+        client.from("teacher_student_groups").select("teacher_user_id"),
+        client.from("teacher_materials").select("teacher_user_id")
+      ]);
+
+      const counts: AnalyticsData = {};
+      records.forEach(t => {
+        if (t.id) counts[t.id] = { studentsCount: 0, materialsCount: 0 };
+      });
+
+      if (groups) {
+        groups.forEach((g: any) => {
+           if (counts[g.teacher_user_id]) counts[g.teacher_user_id].studentsCount++;
+        });
+      }
+      if (materials) {
+        materials.forEach((m: any) => {
+           if (counts[m.teacher_user_id]) counts[m.teacher_user_id].materialsCount++;
+        });
+      }
+
+      setAnalytics(counts);
+    };
+    void load();
   }, []);
 
   if (user?.role !== "master_admin" && !user?.permissions.includes("manage_teachers")) {
@@ -30,10 +69,9 @@ export default function TeacherAnalyticsPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {teachers.map((teacher, idx) => {
-          // Dummy data for analytics
-          const rating = (4.0 + (idx % 10) * 0.1).toFixed(1);
-          const studentsCount = 120 + (idx * 34) % 100;
-          const completionRate = 85 + (idx * 5) % 15;
+          const teacherAnalytics = teacher.id ? analytics[teacher.id] : null;
+          const studentsCount = teacherAnalytics?.studentsCount || 0;
+          const materialsCount = teacherAnalytics?.materialsCount || 0;
 
           return (
             <div key={teacher.id} className="flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -51,19 +89,14 @@ export default function TeacherAnalyticsPage() {
               
               <div className="p-6 grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="flex justify-center text-[#D4AF37] mb-1"><Star className="h-5 w-5 fill-current" /></div>
-                  <div className="text-2xl font-black text-[#0A2540]">{rating}</div>
-                  <div className="text-xs font-bold text-slate-500">متوسط التقييم</div>
-                </div>
-                <div className="text-center">
                   <div className="flex justify-center text-emerald-500 mb-1"><Users className="h-5 w-5" /></div>
                   <div className="text-2xl font-black text-[#0A2540]">{studentsCount}</div>
                   <div className="text-xs font-bold text-slate-500">إجمالي طلابه</div>
                 </div>
-                <div className="text-center col-span-2 pt-4 border-t border-slate-100">
-                  <div className="flex justify-center text-blue-500 mb-1"><TrendingUp className="h-5 w-5" /></div>
-                  <div className="text-xl font-black text-[#0A2540]">{completionRate}%</div>
-                  <div className="text-xs font-bold text-slate-500">نسبة التفاعل واكتمال الدروس</div>
+                <div className="text-center">
+                  <div className="flex justify-center text-blue-500 mb-1"><BookOpen className="h-5 w-5" /></div>
+                  <div className="text-2xl font-black text-[#0A2540]">{materialsCount}</div>
+                  <div className="text-xs font-bold text-slate-500">الملزمات/الإمتحانات</div>
                 </div>
               </div>
             </div>

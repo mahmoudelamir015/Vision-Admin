@@ -195,7 +195,7 @@ export default function TeachersPage() {
     setTeacherPhotoPreview(teacher.profile_image ?? null);
     setForm({
       name: teacher.name,
-      phone: teacher.phone?.replace(/^\\+?20/, '0'),
+      phone: teacher.phone,
       stage: (teacher.stage as TeacherStage) || "secondary",
       school_name: teacher.school_name ?? "",
       subjects: (teacher.subjects ?? []).join(", "),
@@ -212,14 +212,14 @@ export default function TeachersPage() {
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">إدارة المدرسين</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">إدارة المدرسين</h1>
+            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
               إضافة مدرس جديد أو تعديل بيانات المدرسين الموجودين.</p>
           </div>
         </div>
       </motion.div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm">
+      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
         {feedback ? (
           <div
             className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-bold ${
@@ -237,27 +237,27 @@ export default function TeachersPage() {
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             placeholder="اسم المدرس"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
-            value={form.phone?.replace(/^\\+?20/, '0')}
+            value={form.phone}
             onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
             placeholder="010XXXXXXXX"
             dir="ltr"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
             value={form.school_name}
             onChange={(event) => setForm((current) => ({ ...current, school_name: event.target.value }))}
             placeholder="اسم المدرسة"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <input
             value={form.password}
             onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
             placeholder="كلمة مرور اختيارية"
             type="password"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           />
           <button
             type="submit"
@@ -273,7 +273,7 @@ export default function TeachersPage() {
           <select
             value={form.stage}
             onChange={(event) => setForm((current) => ({ ...current, stage: event.target.value as TeacherStage }))}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
           >
             <option value="primary">ابتدائي</option>
             <option value="prep">اعدادي</option>
@@ -303,16 +303,16 @@ export default function TeachersPage() {
 
       {isEditModalOpen && editingId ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-800/40 p-4">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 border-slate-200 dark:bg-[#0A2540]">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col gap-4 overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6 dark:border-white/10 dark:bg-[#0A2540]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">تعديل بيانات المدرس</h2>
-                <p className="text-sm font-bold text-slate-500 text-slate-500">المودال ده بيحفظ التعديل بشكل مباشر لما تضغط حفظ.</p>
+                <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">تعديل بيانات المدرس</h2>
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-400">المودال ده بيحفظ التعديل بشكل مباشر لما تضغط حفظ.</p>
               </div>
               <button
                 type="button"
                 onClick={resetForm}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 border-slate-200 bg-slate-50 text-slate-700 sm:w-auto"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 sm:w-auto"
               >
                 إغلاق
               </button>
@@ -323,32 +323,32 @@ export default function TeachersPage() {
                 value={form.name}
                 onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
                 placeholder="اسم المدرس"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
-                value={form.phone?.replace(/^\\+?20/, '0')}
+                value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                 placeholder="010XXXXXXXX"
                 dir="ltr"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={form.school_name}
                 onChange={(event) => setForm((current) => ({ ...current, school_name: event.target.value }))}
                 placeholder="اسم المدرسة"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <input
                 value={form.password}
                 onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
                 placeholder="كلمة مرور اختيارية"
                 type="password"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
               <select
                 value={form.stage}
                 onChange={(event) => setForm((current) => ({ ...current, stage: event.target.value as TeacherStage }))}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               >
                 <option value="primary">ابتدائي</option>
                 <option value="prep">إعدادي</option>
@@ -370,7 +370,7 @@ export default function TeachersPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] border-slate-200 text-slate-700 sm:w-auto"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 transition-colors hover:border-[#D4AF37] hover:text-[#0A2540] dark:border-white/10 dark:text-slate-300 sm:w-auto"
                 >
                   إلغاء
                 </button>
@@ -395,10 +395,10 @@ export default function TeachersPage() {
           description="أضف أول مدرس من النموذج بالأعلى، ثم يمكنك التعديل أو الحذف من القائمة."
         />
       ) : (
-        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm border-slate-200 bg-white shadow-sm">
+        <section className=" rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40">
           <div className="overflow-x-auto">
             <table className="min-w-full text-right">
-              <thead className="bg-slate-50 text-slate-500 bg-slate-50 text-slate-700">
+              <thead className="bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-slate-300">
                 <tr>
                   <th className="px-4 py-3 text-sm font-bold">الاسم</th>
                   <th className="px-4 py-3 text-sm font-bold">الهاتف</th>
@@ -407,10 +407,10 @@ export default function TeachersPage() {
                   <th className="px-4 py-3 text-sm font-bold text-left">إجراءات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 divide-slate-200">
+              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
                 {teachers.map((teacher) => (
                   <tr key={teacher.id ?? teacher.phone}>
-                    <td className="px-4 py-4 flex items-center gap-3 font-bold text-[#0A2540] text-[#0A2540]">
+                    <td className="px-4 py-4 flex items-center gap-3 font-bold text-[#0A2540] dark:text-white">
                       {teacher.profile_image ? (
                         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-slate-200">
                           <img src={teacher.profile_image} alt={teacher.name} className="h-full w-full object-cover" />
@@ -422,9 +422,9 @@ export default function TeachersPage() {
                       )}
                       {teacher.name}
                     </td>
-                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 text-slate-700">{teacher.phone?.replace(/^\\+?20/, '0')}</td>
-                    <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">{stageLabels[teacher.stage as TeacherStage] ?? "-"}</td>
-                    <td className="px-4 py-4 text-sm font-bold text-slate-600 text-slate-700">{teacher.school_name ?? "-"}</td>
+                    <td className="px-4 py-4 font-mono text-sm tracking-wider text-slate-500 dark:text-slate-300">{teacher.phone}</td>
+                    <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">{stageLabels[teacher.stage as TeacherStage] ?? "-"}</td>
+                    <td className="px-4 py-4 text-sm font-bold text-slate-600 dark:text-slate-300">{teacher.school_name ?? "-"}</td>
                     <td className="px-4 py-4 text-left">
                       <div className="flex flex-wrap justify-end gap-2">
                         <button

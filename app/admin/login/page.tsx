@@ -37,7 +37,7 @@ async function authRequest<T>(payload: unknown): Promise<T> {
 }
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<LoginTab>("master_admin");
+  const [tab, setTab] = useState<LoginTab>("staff");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [accessCode, setAccessCode] = useState("");

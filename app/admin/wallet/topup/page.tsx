@@ -65,7 +65,7 @@ export default function WalletTopupPage() {
         account_type: "student",
         amount: amt,
         reason: `Topup by ${owner}`,
-        student_phone: student.phone?.replace(/^\\+?20/, '0'),
+        student_phone: student.phone?.replace(/^\+?20/, '0'),
       });
 
       if (!entry) {
@@ -108,7 +108,7 @@ export default function WalletTopupPage() {
             <div>جاري التحميل...</div>
           ) : student ? (
             <div className="space-y-3">
-              <div className="text-lg font-bold">{student.name} — {student.phone?.replace(/^\\+?20/, '0')}</div>
+              <div className="text-lg font-bold">{student.name} — {student.phone?.replace(/^\+?20/, '0')}</div>
               <div className="text-sm">الرصيد الحالي: <span className="font-mono">{balance ?? 0} EGP</span></div>
 
               <div className="mt-3 flex gap-2">

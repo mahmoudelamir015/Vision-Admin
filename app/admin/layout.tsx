@@ -24,15 +24,15 @@ export default function AdminLayout({
 
   return (
     <AuthProvider>
-      <div className="flex min-h-screen overflow-x-hidden bg-[#F8FAFC] dir-rtl" dir="rtl">
+      <div className="flex min-h-screen overflow-x-hidden bg-[#F7F2E8] dir-rtl" dir="rtl">
         {!isLogin ? <Sidebar isMobileMenuOpen={isMobileMenuOpen} setIsMobileMenuOpen={setIsMobileMenuOpen} /> : null}
-        <main className={`flex h-screen flex-1 flex-col overflow-hidden ${isLogin ? "bg-[#F8FAFC]" : ""}`}>
+        <main className={`flex h-screen flex-1 flex-col overflow-hidden ${isLogin ? "bg-[#F7F2E8]" : ""}`}>
           {!isLogin ? (
-            <header className="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white/90 px-4 shadow-sm backdrop-blur-md sm:h-16 sm:px-6">
+            <header className="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm sm:h-16 sm:px-5">
               <div className="flex items-center gap-2.5 sm:gap-3">
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="rounded-lg p-2 text-slate-600 transition-all duration-300 ease-in-out hover:bg-slate-100 hover:shadow-md hover:-translate-y-0.5 lg:hidden"
+                  className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
                 >
                   <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
@@ -45,7 +45,7 @@ export default function AdminLayout({
 
           {!isLogin && isMobileMenuOpen ? (
             <div
-              className="fixed inset-0 z-40 bg-[#0A2540]/50 backdrop-blur-sm lg:hidden transition-opacity"
+              className="fixed inset-0 z-40 bg-slate-800/40 lg:hidden"
               onClick={() => setIsMobileMenuOpen(false)}
             />
           ) : null}

@@ -76,26 +76,7 @@ export default function NotificationsPage() {
   const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
   const [approvalMessage, setApprovalMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const [isSending, setIsSending] = useState(false);
-  const [sendFeedback, setSendFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-
   const availableGroups = useMemo(() => groupOptionsByStage[stage], [stage]);
-
-  const loadHistory = async () => {
-    try {
-      const res = await fetch("/api/admin/notifications");
-      const data = await res.json().catch(() => null);
-      if (data?.notifications) {
-        setHistory(data.notifications);
-      }
-    } catch {}
-  };
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadHistory();
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -144,39 +125,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleSendNotification = async () => {
-    if (!title.trim() || !body.trim()) {
-      setSendFeedback({ type: "error", message: "العنوان ونص الإشعار مطلوبان" });
-      return;
-    }
-    setIsSending(true);
-    setSendFeedback(null);
-    try {
-      const payload: Record<string, any> = { title, body, audience };
-      if (audience === "GROUP") {
-        payload.stage = stage;
-        payload.grade = groupName;
-        payload.track = section;
-      } else if (audience === "STUDENT") {
-        payload.student_code = studentCode;
-      }
-      const res = await fetch("/api/admin/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("تعذر إرسال الإشعار");
-      setSendFeedback({ type: "success", message: "تم إرسال الإشعار بنجاح" });
-      setTitle("");
-      setBody("");
-      void loadHistory();
-    } catch (e) {
-      setSendFeedback({ type: "error", message: "حدث خطأ أثناء الإرسال" });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
   if (!isAdmin) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-[2rem] border border-dashed border-red-200 bg-red-50 p-8 text-center text-red-600">
@@ -193,16 +141,16 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0A2540] text-[#D4AF37]">
             <Bell className="h-7 w-7" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold text-[#0A2540] text-[#0A2540]">مركز الإشعارات</h1>
-            <p className="text-sm font-bold text-slate-500 text-slate-500">
-              يمكنك إرسال الإشعارات للجميع أو لفئة معينة وسيقوم النظام بتوجيهها.
+            <h1 className="text-2xl font-extrabold text-[#0A2540] dark:text-white">مركز الإشعارات</h1>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+              الصفحة جاهزة لاستقبال نطاق الاستهداف من Supabase بدون أي بيانات وهمية.
             </p>
           </div>
         </div>
@@ -212,17 +160,17 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
         <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">طلبات استرجاع كلمة المرور</h2>
-              <p className="mt-1 text-sm font-bold text-slate-500 text-slate-700">
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">طلبات استرجاع كلمة المرور</h2>
+              <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-300">
                 الطلبات المعلقة بتظهر هنا، وبعد الموافقة يقدر المستخدم يغيّر الباسورد خلال 24 ساعة.
               </p>
             </div>
-            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 bg-slate-100 dark:text-amber-200">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-amber-700 dark:bg-white/10 dark:text-amber-200">
               {resetRequests.length} طلب
             </span>
           </div>          {approvalMessage ? (
@@ -245,11 +193,11 @@ export default function NotificationsPage() {
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {resetRequests.map((request) => (
-                <div key={request.phone?.replace(/^\\+?20/, '0')} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm border-slate-200 bg-white">
+                <div key={request.phone} className="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black/20">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-base font-extrabold text-[#0A2540] text-[#0A2540]">{request.name}</h3>
-                      <p className="text-sm font-bold text-slate-500 text-slate-500">{request.phone?.replace(/^\\+?20/, '0')}</p>
+                      <h3 className="text-base font-extrabold text-[#0A2540] dark:text-white">{request.name}</h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">{request.phone}</p>
                     </div>
                     <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                       {request.role}
@@ -257,7 +205,7 @@ export default function NotificationsPage() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-xs font-bold text-slate-500 text-slate-500">
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
                       {String(getPasswordResetMeta(request)?.requested_at ?? "")}
                     </div>
                     <button
@@ -277,13 +225,13 @@ export default function NotificationsPage() {
 
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">الفئة المستهدفة</h2>
-            <p className="mt-1 text-sm font-bold text-slate-500 text-slate-500">
-              اختار جمهور الإشعار لتحديد من يستلمه.
+            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">الفئة المستهدفة</h2>
+            <p className="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">
+              اختار جمهور الإشعار قبل ما نربطه بالإرسال الحقيقي.
             </p>
           </div>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
-            LIVE DB
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">
+            NO MOCK DATA
           </span>
         </div>
 
@@ -303,8 +251,8 @@ export default function NotificationsPage() {
                 onClick={() => setAudience(item.id)}
                 className={`rounded-2xl border px-4 py-4 text-right transition-all ${
                   active
-                    ? "border-[#0A2540] bg-[#0A2540]/5 text-[#0A2540] shadow-sm dark:border-[#D4AF37] dark:bg-[#D4AF37]/10 text-[#0A2540]"
-                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white border-slate-200 bg-slate-50 text-slate-700"
+                    ? "border-[#0A2540] bg-[#0A2540]/5 text-[#0A2540] shadow-sm dark:border-[#D4AF37] dark:bg-[#D4AF37]/10 dark:text-white"
+                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -319,7 +267,7 @@ export default function NotificationsPage() {
         {audience === "GROUP" ? (
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <label className="space-y-2 md:col-span-1">
-              <span className="block text-sm font-bold text-slate-700 text-slate-700">اختر المرحلة الدراسية</span>
+              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">اختر المرحلة الدراسية</span>
               <select
                 value={stage}
                 onChange={(event) => {
@@ -327,7 +275,7 @@ export default function NotificationsPage() {
                   setStage(nextStage);
                   setGroupName(groupOptionsByStage[nextStage][0]);
                 }}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               >
                 {stageOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -338,11 +286,11 @@ export default function NotificationsPage() {
             </label>
 
             <label className="space-y-2 md:col-span-2">
-              <span className="block text-sm font-bold text-slate-700 text-slate-700">اختر الصف الدراسي</span>
+              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">اختر الصف الدراسي</span>
               <select
                 value={groupName}
                 onChange={(event) => setGroupName(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               >
                 {availableGroups.map((item) => (
                   <option key={item} value={item}>
@@ -353,12 +301,12 @@ export default function NotificationsPage() {
             </label>
 
             <label className="space-y-2 md:col-span-3">
-              <span className="block text-sm font-bold text-slate-700 text-slate-700">القسم أو الشعبة</span>
+              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">القسم أو الشعبة</span>
               <input
                 value={section}
                 onChange={(event) => setSection(event.target.value)}
                 placeholder="مثال: أ / ب / علمي علوم"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
             </label>
           </div>
@@ -367,13 +315,13 @@ export default function NotificationsPage() {
         {audience === "STUDENT" ? (
           <div className="mt-6">
             <label className="space-y-2 block">
-              <span className="block text-sm font-bold text-slate-700 text-slate-700">كود الطالب</span>
+              <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">كود الطالب</span>
               <input
                 value={studentCode}
                 onChange={(event) => setStudentCode(event.target.value)}
                 placeholder="مثال: VIS-101"
                 dir="ltr"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono tracking-[0.2em] outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono tracking-[0.2em] outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
               />
             </label>
           </div>
@@ -384,57 +332,41 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
             <Layers3 className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">محتوى الإشعار</h2>
-            <p className="text-sm font-bold text-slate-500 text-slate-500">
-              اكتب عنوان ونص الإشعار الواضح.
+            <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">محتوى الإشعار</h2>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+              هنربطه لاحقًا بجدول الإشعارات بعد ما يتجهز الـ backend.
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
           <label className="space-y-2">
-            <span className="block text-sm font-bold text-slate-700 text-slate-700">عنوان الإشعار</span>
+            <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">عنوان الإشعار</span>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="مثال: تنبيه هام بخصوص الحضور"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
             />
           </label>
 
           <label className="space-y-2">
-            <span className="block text-sm font-bold text-slate-700 text-slate-700">نص الإشعار</span>
+            <span className="block text-sm font-bold text-slate-700 dark:text-slate-300">نص الإشعار</span>
             <textarea
               value={body}
               onChange={(event) => setBody(event.target.value)}
               placeholder="اكتب محتوى الإشعار هنا..."
               rows={4}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] border-slate-200 bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition-colors focus:border-[#D4AF37] dark:border-white/10 dark:bg-black/20"
             />
           </label>
-        </div>
-
-        <div className="mt-5 flex items-center justify-between">
-          <button
-            type="button"
-            disabled={isSending}
-            onClick={handleSendNotification}
-            className="rounded-2xl bg-[#0A2540] px-8 py-3 text-sm font-bold text-white transition-opacity disabled:opacity-50"
-          >
-            {isSending ? "جاري الإرسال..." : "إرسال الإشعار"}
-          </button>
-          {sendFeedback ? (
-            <span className={`text-sm font-bold ${sendFeedback.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
-              {sendFeedback.message}
-            </span>
-          ) : null}
         </div>
       </motion.section>
 
@@ -442,54 +374,30 @@ export default function NotificationsPage() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.15 }}
-        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm border-slate-200 bg-white shadow-sm"
+        className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0A2540]/40"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] bg-slate-50 dark:text-[#D4AF37]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0A2540]/5 text-[#0A2540] dark:bg-white/5 dark:text-[#D4AF37]">
               <School2 className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-[#0A2540] text-[#0A2540]">سجل الإشعارات</h2>
-              <p className="text-sm font-bold text-slate-500 text-slate-500">
-                أحدث الإشعارات المرسلة من النظام.
+              <h2 className="text-xl font-extrabold text-[#0A2540] dark:text-white">سجل الإشعارات</h2>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                لسه مفيش بيانات مرسلة، فإحنا مستنيين الربط الحقيقي.
               </p>
             </div>
           </div>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-600">
-            {history.length} ACTIVE
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500 dark:bg-white/5 dark:text-slate-300">
+            EMPTY FEED
           </span>
         </div>
 
-        {history.length === 0 ? (
-          <EmptyState
-            icon={CircleDashed}
-            title="لا توجد إشعارات مرسلة حالياً"
-            description="ستظهر الإشعارات المرسلة من للإدارة هنا لتوثيقها."
-          />
-        ) : (
-          <div className="grid gap-3">
-            {history.map((record) => (
-              <div key={record.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h4 className="font-extrabold text-[#0A2540]">{record.title}</h4>
-                    <p className="text-sm text-slate-600">{record.body}</p>
-                  </div>
-                  <span className="text-xs font-bold text-slate-400">
-                    {new Date(record.created_at).toLocaleString("ar-EG")}
-                  </span>
-                </div>
-                {record.audience_role || record.stage ? (
-                  <div className="mt-3 flex gap-2 text-[10px] font-bold text-slate-500">
-                    {record.audience_role ? <span className="rounded-full bg-slate-200 px-2 py-1">Roles: {record.audience_role}</span> : null}
-                    {record.stage ? <span className="rounded-full bg-slate-200 px-2 py-1">{record.stage} • {record.grade}</span> : null}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
+        <EmptyState
+          icon={CircleDashed}
+          title="لا توجد إشعارات مرسلة حالياً"
+          description="بعد الربط مع Supabase هتظهر هنا الإشعارات المرسلة للجميع أو للصفوف أو للطلاب المحددين."
+        />
       </motion.section>
     </div>
   );
