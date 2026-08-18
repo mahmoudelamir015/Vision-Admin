@@ -37,7 +37,7 @@ async function authRequest<T>(payload: unknown): Promise<T> {
 }
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<LoginTab>("staff");
+  const [tab, setTab] = useState<LoginTab>("master_admin");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [accessCode, setAccessCode] = useState("");
@@ -197,14 +197,12 @@ export default function LoginPage() {
                   <label className="block text-sm font-bold text-slate-700">رقم الهاتف</label>
                   <input
                     type="tel"
-                    dir="ltr"
-                    style={{ unicodeBidi: "plaintext", direction: "ltr" }}
                     value={phone}
                     onChange={(event) => setPhone(event.target.value)}
-                    placeholder="010XXXXXXXX"
+                    placeholder="+2010XXXXXXXXX"
                     autoComplete="tel"
                     inputMode="tel"
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left font-mono text-base font-semibold tracking-[0.12em] text-[#0A2540] outline-none transition-all placeholder:text-slate-300 focus:border-[#D4AF37] focus:bg-[#FFFCF7] focus:ring-4 focus:ring-[#D4AF37]/10"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center text-base font-semibold tracking-[0.12em] text-[#0A2540] outline-none transition-all placeholder:text-slate-300 focus:border-[#D4AF37] focus:bg-[#FFFCF7] focus:ring-4 focus:ring-[#D4AF37]/10"
                   />
                 </div>
               ) : null}
