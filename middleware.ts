@@ -9,6 +9,8 @@ function canAccess(pathname: string, profile: AdminProfile) {
   if (pathname.startsWith("/admin/attendance")) return permissions.has("attendance");
   if (pathname.startsWith("/admin/wallet")) return permissions.has("wallet");
   if (pathname.startsWith("/admin/operations")) return permissions.has("operations");
+  if (pathname.startsWith("/admin/gate")) return permissions.has("gate");
+  if (pathname.startsWith("/admin/teacher")) return permissions.has("manage_teachers");
   return false;
 }
 

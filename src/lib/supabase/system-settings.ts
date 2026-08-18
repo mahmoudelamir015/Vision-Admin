@@ -5,6 +5,9 @@ export type SystemSettings = {
   wallet_enabled: boolean;
   registration_open: boolean;
   show_results: boolean;
+  teacher_ratio?: number;
+  lesson_price?: number;
+  auto_settlement?: number;
 };
 
 export async function fetchSystemSettings(): Promise<SystemSettings | null> {
@@ -26,7 +29,7 @@ export async function fetchSystemSettings(): Promise<SystemSettings | null> {
   try {
     const { data, error } = await client
       .from(supabaseTableNames.systemSettings)
-      .select("id, wallet_enabled, registration_open, show_results")
+      .select("id, wallet_enabled, registration_open, show_results, teacher_ratio, lesson_price, auto_settlement")
       .order("id", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -51,6 +54,9 @@ function normalizeSystemSettings(data: SupabaseRecord | null): SystemSettings | 
     wallet_enabled: Boolean(data.wallet_enabled),
     registration_open: Boolean(data.registration_open),
     show_results: Boolean(data.show_results),
+    teacher_ratio: Number(data.teacher_ratio ?? 60),
+    lesson_price: Number(data.lesson_price ?? 250),
+    auto_settlement: Number(data.auto_settlement ?? 80),
   };
 }
 
@@ -113,6 +119,9 @@ export async function updateSystemSettings(settings: Partial<SystemSettings>): P
           wallet_enabled: settings.wallet_enabled ?? existing.wallet_enabled,
           registration_open: settings.registration_open ?? existing.registration_open,
           show_results: settings.show_results ?? existing.show_results,
+          teacher_ratio: settings.teacher_ratio ?? existing.teacher_ratio,
+          lesson_price: settings.lesson_price ?? existing.lesson_price,
+          auto_settlement: settings.auto_settlement ?? existing.auto_settlement,
         })
         .eq("id", existing.id)
         .select()
@@ -131,6 +140,9 @@ export async function updateSystemSettings(settings: Partial<SystemSettings>): P
           wallet_enabled: settings.wallet_enabled ?? true,
           registration_open: settings.registration_open ?? false,
           show_results: settings.show_results ?? true,
+          teacher_ratio: settings.teacher_ratio ?? 60,
+          lesson_price: settings.lesson_price ?? 250,
+          auto_settlement: settings.auto_settlement ?? 80,
         })
         .select()
         .single();
@@ -187,6 +199,9 @@ export function subscribeToSystemSettings(callback: (settings: SystemSettings) =
               wallet_enabled: false,
               registration_open: false,
               show_results: false,
+              teacher_ratio: 60,
+              lesson_price: 250,
+              auto_settlement: 80,
             });
           }
         }
